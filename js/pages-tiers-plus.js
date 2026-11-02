@@ -53,7 +53,7 @@ function pagePlus() {
     + `<div class=carte><h3>Comptes</h3><div class=boutons><button onclick="aller('cpt')">Voir les soldes des comptes</button></div></div>`
     + `<div class=carte><h3>Récurrentes</h3><div class=boutons><button onclick="pageRecurrentes()">Gérer les récurrentes</button></div></div>`
     + `<div class=carte><h3>Modifier</h3><div class=boutons><button onclick="listeModifiable('cats')">Catégories</button><button onclick="listeModifiable('tiers')">Tiers</button><button onclick="listeModifiable('env')">Placements</button><button onclick="listeModifiable('modes')">Comptes</button></div></div>`
-    + `<div class=carte><h3>Code d'entrée</h3><div class=boutons><button onclick="verrouiller('actuel')">Changer le code</button></div></div>`;
+    + `<div class=carte><h3>Code d'entrée</h3><div class=boutons><button onclick="verrouiller('actuel')">Changer le code</button><button onclick="relierAutreAppareil()">Relier un autre appareil</button></div></div>`;
 }
 
 /* La copie de sécurité : tout le budget dans un fichier (budget-2026-11-02.json) */

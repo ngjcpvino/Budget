@@ -60,7 +60,7 @@ function dessinerCode() {
   const pave = v.etape !== 'attente' && v.etape !== 'reseau', touche = k => `<button class=carre onclick="toucherCode('${k}')">${k}</button>`;
   const annuler = ['actuel', 'nouveau', 'nouveau2'].includes(v.etape) ? '<button class="carre texte-discret" onclick="ouvrirApp()" aria-label="Annuler">✕</button>' : '<span></span>';
   const points = Array.from({ length: longueurCode() }, (x, i) => `<i${i < v.ch.length ? ' class=plein' : ''}></i>`).join('');
-  const aide = v.etape === 'liaison' ? "<p class=texte-discret>Dans l'ancienne app : Plus → Relier la nouvelle app.</p>" : '';
+  const aide = v.etape === 'liaison' ? "<p class=texte-discret>Sur un appareil déjà relié : Plus → Relier un autre appareil.</p>" : '';
   trouver('#verrou').innerHTML = `<div class=code><h1>Budget</h1><p>${TEXTES_CODE[v.etape]}</p>`
     + (!pave ? (v.etape === 'reseau' ? '<button onclick="verrouiller()">Réessayer</button>' : '')
       : `<div class=points>${points}</div><div class=pave>${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(touche).join('')}${annuler}${touche(0)}<button class="carre texte-discret" onclick="toucherCode('&lt;')" aria-label="Effacer">⌫</button></div>${aide}`)
@@ -157,6 +157,19 @@ async function relier(v, chiffres) {
   afficherMessage('Appareil relié.');
   verrouiller();
 }
+/* Plus → Relier un autre appareil : un code de liaison à 6 chiffres (10 minutes, une seule fois), à taper dans l'autre appareil */
+async function relierAutreAppareil() {
+  try {
+    const r = await appelServeur('nouvelleLiaison');
+    ouvrirFenetre(`<h2>Code de liaison</h2><p class=gros-chiffre><b>${r.code.slice(0, 3)} ${r.code.slice(3)}</b></p>`
+      + `<p class=texte-discret>Tape-le dans l'autre appareil d'ici ${r.minutes} minutes. Il ne sert qu'une fois.</p>`
+      + '<div class="boutons espace-haut"><button class=bouton-principal onclick="fermerFenetre()">Fermer</button></div>');
+  } catch (e) {
+    if (erreurCle(e) || erreurCode(e)) return;
+    afficherMessage(e.message === 'reseau' ? 'Il faut le réseau pour donner un code de liaison.' : 'Connexion impossible : réessaie.');
+  }
+}
+
 /* Le nom que le Journal de la feuille donnera à cet appareil */
 const deviner = () => /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document ? 'iPad' : /iPhone/.test(navigator.userAgent) ? 'iPhone' : /Windows/.test(navigator.userAgent) ? 'Ordi' : 'Appareil';
 
