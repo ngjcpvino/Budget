@@ -25,7 +25,6 @@ const TEXTES_CODE = {
 let code = {};                 // { sel, e } : le sel et l'empreinte du bon code
 let verrou = null;             // l'écran du code, quand il est là
 let derniereActivite = Date.now();
-let courrielLiaison = '';       // l'adresse où le dernier code de liaison est parti (gardée dans l'appareil)
 
 const garderCode = o => {
   code = o;
@@ -161,7 +160,7 @@ async function relier(v, chiffres) {
 }
 /* Plus → Relier un autre appareil : un code de liaison à 6 chiffres (10 minutes, une seule fois), à taper dans l'autre appareil */
 /* Plus → Relier un autre appareil : la feuille donne un code de liaison et l'envoie par courriel, avec le lien de l'app.
-   L'adresse de la dernière fois reste sur l'appareil (jamais dans la feuille). Courriel raté : la fenêtre le dit, le code reste bon. */
+   Le courriel parti, le champ se vide (J-C, 2026-11-02; l'adresse n'est gardée nulle part). Courriel raté : la fenêtre le dit, le code reste bon, l'adresse reste dans le champ. */
 const COURRIEL_VALIDE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function relierAutreAppareil() {
   const champ = trouver('#f_courriel'), bouton = trouver('#b_courriel'), adresse = champ.value.trim();
@@ -171,8 +170,7 @@ async function relierAutreAppareil() {
   bouton.disabled = true;
   try {
     const r = await appelServeur('nouvelleLiaison', { courriel: adresse });
-    courrielLiaison = adresse;
-    ecrireMemoire({ etat: { courriel: adresse } });
+    if (r.envoye) champ.value = '';
     ouvrirFenetre(`<h2>Code de liaison</h2><p class=gros-chiffre><b>${r.code.slice(0, 3)} ${r.code.slice(3)}</b></p>`
       + `<p class=texte-discret>${r.envoye ? `Le lien de l'app et ce code sont partis par courriel à ${securiser(adresse)}. Tape-le` : "Le courriel n'a pas pu partir. Tape ce code"}`
       + ` dans l'autre appareil d'ici ${r.minutes} minutes. Il ne sert qu'une fois.</p>`

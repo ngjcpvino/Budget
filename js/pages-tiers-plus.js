@@ -54,7 +54,7 @@ function pagePlus() {
     + `<div class=carte><h3>Récurrentes</h3><div class=boutons><button onclick="pageRecurrentes()">Gérer les récurrentes</button></div></div>`
     + `<div class=carte><h3>Modifier</h3><div class=boutons><button onclick="listeModifiable('cats')">Catégories</button><button onclick="listeModifiable('tiers')">Tiers</button><button onclick="listeModifiable('env')">Placements</button><button onclick="listeModifiable('modes')">Comptes</button></div></div>`
     + `<div class=carte><h3>Code d'entrée</h3><div class=boutons><button onclick="verrouiller('actuel')">Changer le code</button></div>`
-    + `<label class=espace-haut>Relier un autre appareil : envoyer le lien et le code à<input id=f_courriel type=email autocomplete=email value="${securiser(courrielLiaison)}"></label>`
+    + `<label class=espace-haut>Relier un autre appareil : envoyer le lien et le code à<input id=f_courriel type=email autocomplete=email></label>`
     + '<div class=boutons><button id=b_courriel class=bouton-principal onclick="relierAutreAppareil()">Envoyer</button></div></div>'
     + '<div class=carte><div class=boutons><button onclick="verrouiller()">Déconnexion</button></div></div>';
 }

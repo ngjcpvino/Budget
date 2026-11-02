@@ -10,7 +10,6 @@
   curseur = etat.curseur || 0;
   generation = etat.generation || '';
   code = etat.code || {};
-  courrielLiaison = etat.courriel || '';
   if (etat.reglages) {
     appliquerReglages(etat.reglages);
     donnees.ex = m.lignes;
