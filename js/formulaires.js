@@ -39,22 +39,45 @@ function choisirBouton(bouton) {
 }
 const rafraichirFormulaire = () => rouvrir(lireEtat());
 
-/* Un champ de montant au format d'ici (« 83,40 $ ») */
-const champMontant = (id, v, classe) => `<input id=${id}${classe ? ' class=' + classe : ''} type=text inputmode=decimal autocomplete=off placeholder="0,00 $" value="${v === '' || v == null || isNaN(+v) ? '' : argent(v)}" onblur="formaterMontant(this)" oninput="majPartCommune()">`;
+/* Un champ de montant au format d'ici (« 83,40 $ »); auto : le montant y a été mis tout seul (data-auto le garde, pour savoir s'il a été changé à la main) */
+const champMontant = (id, v, classe, auto) => {
+  const texte = v === '' || v == null || isNaN(+v) ? '' : argent(v);
+  return `<input id=${id}${classe ? ' class=' + classe : ''} type=text inputmode=decimal autocomplete=off placeholder="0,00 $" value="${texte}"${auto && texte ? ` data-auto="${texte}"` : ''} onblur="formaterMontant(this)" oninput="majPartCommune()">`;
+};
 function formaterMontant(champ) {
   const n = lireMontant(champ.value);
   champ.value = n === '' ? '' : argent(n);
+  if (champ.id === 'f_amt' && n !== '') completerParts(n);
+}
+/* Le montant tapé ou changé : les parts « Juste pour » vides ou mises toutes seules sont refaites, dans l'ordre (chacune prend ce qui reste);
+   une part tapée à la main ne bouge pas */
+function completerParts(montant) {
+  const parts = lireParts(), aRefaire = p => p[0] && p[0] !== '+' && (p[1] === '' || p[2]);
+  parts.forEach(p => { if (aRefaire(p)) p[1] = ''; });
+  parts.forEach((p, i) => {
+    if (!aRefaire(p)) return;
+    const champ = trouver('#f_z' + i), reste = auCent(montant - parts.reduce((s, q, j) => s + (j !== i && q[0] ? +q[1] || 0 : 0), 0));
+    p[1] = reste || '';
+    champ.value = reste ? argent(reste) : '';
+    if (reste) champ.dataset.auto = champ.value;
+    else delete champ.dataset.auto;
+  });
+  majPartCommune();
 }
 
 /* Ce que le formulaire d'une dépense (ou d'une récurrente) contient */
-const lireParts = () => [0, 1, 2].filter(i => trouver('#f_q' + i)).map(i => [lireChamp('f_q' + i), lireMontant(lireChamp('f_z' + i))]);
+/* Une part : [le nom, le montant, mise toute seule (pas changée à la main)] */
+const lireParts = () => [0, 1, 2].filter(i => trouver('#f_q' + i)).map(i => {
+  const champ = trouver('#f_z' + i), v = lireMontant(champ.value);
+  return [lireChamp('f_q' + i), v, v !== '' && champ.dataset.auto !== undefined && lireMontant(champ.dataset.auto) === v];
+});
 const lireFormulaire = () => ({
   type: lc('f_t') || 'e', d: lc('f_d'), desc: lc('f_desc'), cat: lc('f_cat'), amt: lireMontant(lc('f_amt')), by: lc('f_by'), mode: lc('f_mode'),
   ...(trouver('#f_nzf') ? { nzf: lireChamp('f_nzf') } : {}),
   env: lc('f_env'), pj: trouver('#f_q0') ? lireParts() : null
 });
 
-/* ----- « Juste pour… » : une rangée par part (3 au plus); un nom déjà pris n'est plus offert; « Personne » enlève la rangée ----- */
+/* ----- « Juste pour… » : une rangée par part (3 au plus); un nom déjà pris n'est plus offert; « — » enlève la rangée ----- */
 const partsFormulaire = e => {
   if (e.pj) return e.pj;
   const l = [[e.nzf || (+e.nz ? e.by : ''), e.nz], [e.nzf2, e.nz2], [e.nzf3, e.nz3]].filter(p => p[0] && +p[1]);
@@ -65,7 +88,9 @@ function champsParts(e) {
   const rangeePart = (p, i) => {
     const pris = parts.filter((x, j) => j !== i).map(x => x[0]);
     const plus = i === parts.length - 1 && p[0] && parts.length < 3 ? '<button type=button class="carre texte-principal" onclick="ajouterPart()" aria-label="Une autre part">+</button>' : '<span></span>';
-    return `<div class=part><select id=f_q${i} onchange="changerPart(this)">${options([['', 'Personne'], ...noms.filter(n => !pris.includes(n)), ['+', '+ Ajouter un tiers']], p[0])}</select>${champMontant('f_z' + i, p[1])}${plus}</div>`;
+    // Mise toute seule, ou une seule part égale au montant (tout pour une personne) : elle suivra le montant
+    const auto = p[2] || (parts.length === 1 && p[1] !== '' && auCent(+p[1]) === auCent(+e.amt));
+    return `<div class=part><select id=f_q${i} onchange="changerPart(this)">${options([['', '—'], ...noms.filter(n => !pris.includes(n)), ['+', '+ Ajouter un tiers']], p[0])}</select>${champMontant('f_z' + i, p[1], '', auto)}${plus}</div>`;
   };
   return `<label>Juste pour…${parts.map(rangeePart).join('')}${parts.some(p => p[0]) ? `<p class="texte-discret sous-texte" id=f_pc>${textePartCommune(e.amt, parts)}</p>` : ''}</label>`;
 }
@@ -80,12 +105,15 @@ function majPartCommune() {
   if (x) x.innerHTML = textePartCommune(lireMontant(lc('f_amt')), lireParts());
 }
 
-/* Choisir une personne met le montant qui reste (le montant moins les autres parts), seulement si sa case est vide */
+/* Choisir une personne met le montant qui reste (le montant moins les autres parts), seulement si sa case est vide; il suivra le montant */
 const remplirPart = (o, i) => {
   const p = o.pj[i];
   if (!p[0] || p[0] === '+' || +p[1] || o.amt === '') return;
   const reste = auCent(o.amt - o.pj.reduce((s, q, j) => s + (j !== i && q[0] ? +q[1] || 0 : 0), 0));
-  if (reste) p[1] = reste;
+  if (reste) {
+    p[1] = reste;
+    p[2] = true;
+  }
 };
 function changerPart(menu) {
   const i = +menu.id.slice(3), o = lireEtat();
@@ -132,7 +160,8 @@ function champsFormulaire(e, recurrente) {
   const compteChoisi = cles.includes(e.mode) ? e.mode : e.type === 'e' && cles.includes(carteDe(e.by)) ? carteDe(e.by) : cles[0];
   return (recurrente ? `<label>Genre${choixBoutons('f_t', [['e', 'Dépense'], ['m', 'Placement']], e.type || 'e', 1)}</label>` : `<div id=f_t data-v="${e.type || 'e'}" hidden></div>`)
     + champMontant('f_amt', e.amt, 'champ-montant') + '\n'
-    + `<div class=deux-colonnes><label>${recurrente ? 'Première date' : 'Date'}<input id=f_d type=date value="${e.d || e.start || ''}"></label><label>Description<input id=f_desc value="${securiser(e.desc)}"></label></div>\n`
+    + (recurrente && e.freq === 'x' ? `<label>Description<input id=f_desc value="${securiser(e.desc)}"></label>\n`
+      : `<div class=deux-colonnes><label>${recurrente ? 'Première date' : 'Date'}<input id=f_d type=date value="${e.d || e.start || ''}"></label><label>Description<input id=f_desc value="${securiser(e.desc)}"></label></div>\n`)
     + (interetsOuRemise ? '' : `<label>Catégorie<select id=f_cat>${options(donnees.cats, e.cat, e.cat ? '' : 'Choisis une catégorie')}</select></label>`) + '\n'
     + (e.type === 'e' ? '' : `<label>Placement<select id=f_env>${options(donnees.env.map(x => x.n), e.env)}</select></label>`) + '\n'
     + (interetsOuRemise ? '' : `<label>Qui a payé${choixBoutons('f_by', [N, J], e.by, 1)}</label>${e.type === 'e' ? champsParts(e) : ''}<label>Mode de paiement${choixBoutons('f_mode', comptes, compteChoisi)}</label>`);
@@ -167,13 +196,31 @@ function placerBande(bande) {
 function editerEntree(id, pre) {
   if (id && /^imp\d{4}-fermeture/.test(id)) return afficherMessage("Ligne de fermeture de l'année : elle ne se modifie pas.");
   const base = id ? donnees.ex.find(x => x.id === id)
-    : { type: 'e', d: aujourdhui(), by: donnees.p[0], mode: '', cat: donnees.cats[0], amt: '', desc: '', env: vue === 'pl' ? placementOuvert : '' };
+    : { type: 'e', d: '', by: donnees.p[0], mode: '', cat: '', amt: '', desc: '', env: vue === 'pl' ? placementOuvert : '' };
   const e = { ...base, ...(pre || {}) };
   if (['t', 'r', 'p'].includes(e.type)) return editerPaiement(id, pre);
   rouvrir = o => editerEntree(id, o);
   lireEtat = lireFormulaire;
   const titre = (TITRES_FENETRE[e.type === 'f' && /intér/i.test(e.desc || '') ? 'i' : e.type] || TITRES_FENETRE.e)[id ? 1 : 0];
-  ouvrirFenetre(`<h2>${titre}</h2>${champsFormulaire(e)}${boutonsBas(id, 'enregistrerEntree')}`);
+  ouvrirFenetre(`<h2>${titre}</h2>${id || ligneReleve >= 0 || !['e', 'm'].includes(e.type) ? '' : choixModeles()}${champsFormulaire(e)}${boutonsBas(id, 'enregistrerEntree')}`);
+}
+
+/* ----- Les modèles (des récurrentes « Sans date ») : en haut d'une nouvelle dépense; en toucher un remplit le formulaire ----- */
+const modeles = () => donnees.rec.filter(r => !r.del && r.freq === 'x');
+const choixModeles = () => modeles().length ? `<label>Partir d'un modèle<div class=choix>`
+  + modeles().map(r => `<button type=button onclick="partirDuModele('${r.id}')">${ICONES_TYPE[r.type] || iconeCategorie(r.cat)} ${securiser(r.desc)}</button>`).join('') + '</div></label>' : '';
+/* Les parts d'un modèle : gardées par leur nom, même sans montant (sans montant : la part prendra ce qui reste) */
+const partsModele = r => {
+  const parts = [[r.nzf || (+r.nz ? r.by : ''), r.nz], [r.nzf2, r.nz2], [r.nzf3, r.nz3]].filter(p => p[0]).map(p => [p[0], +p[1] ? +p[1] : '']);
+  return parts.length ? parts : [['', '']];
+};
+/* Le modèle donne ce qu'il sait; la date, et le montant s'il n'en a pas, restent tels que tapés. Une part sans montant prend ce qui reste */
+function partirDuModele(idModele) {
+  const r = donnees.rec.find(x => x.id === idModele), s = lireEtat();
+  if (!r) return;
+  const o = { ...s, type: r.type || 'e', desc: r.desc, cat: r.cat, by: r.by, mode: r.mode, env: r.env || '', amt: +r.amt ? +r.amt : s.amt, pj: partsModele(r) };
+  o.pj.forEach((p, i) => remplirPart(o, i));
+  rouvrir(o);
 }
 
 /* Les boutons du bas; pour une ligne du relevé : Annuler · Valider (elle revient cochée, rien n'entre encore) */
@@ -220,23 +267,31 @@ function supprimerEntree(id) {
 
 /* ----- Paiement : qui paie (une personne, un tiers, un placement), puis à qui (la carte, une personne; un placement paie seulement la carte,
    en choisissant la catégorie à diminuer). Dans la feuille : sur la carte = Transfert; à une personne = Remboursement; par un placement = Payé par l'enveloppe ----- */
+/* Ce qu'un tiers doit en tout (à l'un et à l'autre), au 31 décembre de l'année choisie, comme la page Tiers */
+const montantDu = t => auCent(Object.values(soldesAu(anneeCourante).ti[t] || {}).reduce((s, x) => s + Math.max(+x || 0, 0), 0));
+
 function editerPaiement(id, pre) {
   const [N, J] = donnees.p, carte = carteDe(N), b = id ? donnees.ex.find(x => x.id === id) : null;
   const e = {
-    d: aujourdhui(), desc: '', amt: '', by: N, aq: 'mc', env: '', cat: donnees.cats[0],
+    d: '', desc: '', amt: '', du: '', by: N, aq: 'mc', env: '', cat: '',
     ...(b ? { d: b.d, desc: b.desc, amt: b.amt, by: b.type === 'p' ? PLACEMENT : b.by || proprietaireCompte(b.mode), aq: b.type === 'r' ? b.nzf : b.to === carte ? 'mc' : proprietaireCompte(b.to) || 'mc', env: b.env, cat: b.cat } : {}),
     ...(pre || {})
   };
   e.env = e.env || (vue === 'pl' ? placementOuvert : (donnees.env[0] || {}).n) || '';
-  e.cat = e.cat || donnees.cats[0];
+  /* Un nouveau paiement d'un tiers : le montant qu'il doit se met tout seul (on peut le changer). Changer de payeur le refait,
+     seulement si le montant n'a pas été changé à la main (du = le montant mis tout seul) */
+  if (!id && (e.amt === '' || e.amt === e.du)) {
+    const tiers = e.by && e.by !== PLACEMENT && !estPersonne(e.by), du = tiers ? montantDu(e.by) : 0;
+    e.amt = e.du = du > 0 ? du : '';
+  }
   rouvrir = o => editerPaiement(id, o);
-  lireEtat = () => ({ d: lc('f_d'), desc: lc('f_desc'), amt: lireMontant(lc('f_amt')), by: lc('f_by'), aq: lc('f_aq') || 'mc', env: lc('f_env'), cat: lc('f_cat') });
+  lireEtat = () => ({ d: lc('f_d'), desc: lc('f_desc'), amt: lireMontant(lc('f_amt')), du: lireMontant(lc('f_du')), by: lc('f_by'), aq: lc('f_aq') || 'mc', env: lc('f_env'), cat: lc('f_cat') });
   const parPlacement = e.by === PLACEMENT;
   const aQui = [...(carte ? [['mc', nomCompte(carte)]] : []), N, J].filter(x => x !== e.by);
   const aQuiChoisi = aQui.some(x => (Array.isArray(x) ? x[0] : x) === e.aq) ? e.aq : Array.isArray(aQui[0]) ? aQui[0][0] : aQui[0];
   const choixPlacement = `<div class=deux-colonnes><label>Placement<select id=f_env onchange="rafraichirFormulaire()">${options(donnees.env.map(x => x.n), e.env)}</select></label>`
-    + `<label>Catégorie à diminuer<select id=f_cat onchange="rafraichirFormulaire()">${options(donnees.cats, e.cat)}</select></label></div>`;
-  ouvrirFenetre(`<h2>${id ? 'Modifier le paiement' : 'Nouveau paiement'}</h2>${champMontant('f_amt', e.amt, 'champ-montant')}`
+    + `<label>Catégorie à diminuer<select id=f_cat onchange="rafraichirFormulaire()">${options(donnees.cats, e.cat, e.cat ? '' : 'Choisis une catégorie')}</select></label></div>`;
+  ouvrirFenetre(`<h2>${id ? 'Modifier le paiement' : 'Nouveau paiement'}</h2>${champMontant('f_amt', e.amt, 'champ-montant')}<input type=hidden id=f_du value="${e.du}">`
     + `<div class=deux-colonnes><label>Date<input id=f_d type=date value="${e.d}"></label><label>Description<input id=f_desc value="${securiser(e.desc)}"></label></div>`
     + `<label>Qui paie${choixBoutons('f_by', [N, J, ...donnees.tiers, ...(carte ? [[PLACEMENT, 'Un placement']] : [])], e.by, 1)}</label>`
     + (parPlacement ? choixPlacement : `<label>À qui${choixBoutons('f_aq', aQui, aQuiChoisi, 1)}</label>`)
@@ -247,7 +302,7 @@ function editerPaiement(id, pre) {
 function phrasePaiement(qui, aQui, placement, categorie) {
   const [N, J] = donnees.p, carte = securiser(nomCompte(carteDe(N))), Q = securiser(qui), A = securiser(aQui);
   if (!qui) return 'Choisis qui paie.';
-  if (qui === PLACEMENT) return `Le placement ${securiser(placement)} baisse du montant, la ${carte} aussi, et les communes baissent du montant dans la catégorie ${securiser(categorie)}.`;
+  if (qui === PLACEMENT) return `Le placement ${securiser(placement)} baisse du montant, la ${carte} aussi, et les communes baissent du montant ${categorie ? 'dans la catégorie ' + securiser(categorie) : 'dans la catégorie à choisir'}.`;
   if (aQui === 'mc') return estPersonne(qui) ? `La ${carte} baisse du montant, et la part de ${Q} aussi.` : `La dette de ${Q} baisse du montant, et la ${carte} aussi.`;
   return estPersonne(qui) ? `La part de ${Q} sur la ${carte} baisse du montant, celle de ${A} monte d'autant.`
     : `La dette de ${Q} envers ${A} baisse du montant; ce qui dépasse cette dette baisse sa dette envers ${securiser(aQui === N ? J : N)}, et ${A} le lui doit alors.`;
@@ -258,6 +313,7 @@ function objetPaiement() {
   if (!dateValide(s.d) || !(s.amt > 0)) return afficherMessage('Entre une date et un montant.');
   if (!s.by) return afficherMessage('Choisis qui paie.');
   if (parPlacement && !s.env) return afficherMessage('Choisis un placement (à créer dans Plus).');
+  if (parPlacement && !s.cat) return afficherMessage('Choisis une catégorie.');
   return {
     d: s.d, desc: s.desc, amt: s.amt, cat: parPlacement ? s.cat : '', env: parPlacement ? s.env : '', mode: '', nz: 0, nzf: '', nz2: 0, nzf2: '', nz3: 0, nzf3: '',
     ...(parPlacement ? { type: 'p', by: N, to: carte } : s.aq === 'mc' ? { type: 't', by: s.by, to: carte } : { type: 'r', by: s.by, nzf: s.aq, to: '' })

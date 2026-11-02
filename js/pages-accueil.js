@@ -99,7 +99,7 @@ function voirMode(p) {
 function pageAccueil() {
   const [N, J] = donnees.p, y = anneeCourante, lignes = depensesAnnee();
   const communes = stats(lignes, '').tot, perso = { [N]: stats(lignes, N).tot, [J]: stats(lignes, J).tot };
-  const dettes = soldes(lignesJusqua(y + '-12-31')), doit = dettes.solde, aZero = Math.abs(doit) < 0.005;
+  const dettes = soldesAu(y), doit = dettes.solde, aZero = Math.abs(doit) < 0.005;
   if (!lignes.length && aZero) return `<div class=carte><div class=vide>Aucune dépense en ${y}.<br>Touche + pour commencer.</div></div>`;
   const choix = modeAccueil, s = stats(lignes, choix);
   const retour = choix ? `<div class="carte mode-actif"><span class=${choix === N ? 'texte-n' : 'texte-jc'}>${securiser(libelleMode(choix))}</span><button class=carre onclick="voirMode('')" aria-label="Revenir aux communes">✕</button></div>` : '';

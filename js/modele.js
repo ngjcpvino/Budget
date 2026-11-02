@@ -101,6 +101,8 @@ function partDe(ligne, choix) {
 const lignesVivantes = () => donnees.ex.filter(e => !e.del && e.d);
 const depensesAnnee = () => lignesVivantes().filter(e => e.d.startsWith(anneeCourante));
 const lignesJusqua = fin => lignesVivantes().filter(e => e.d <= fin);
+/* Les dettes (qui doit à qui, les tiers) au 31 décembre d'une année */
+const soldesAu = y => soldes(lignesJusqua(y + '-12-31'));
 
 /* Les totaux d'un choix (voir partDe) : total, par catégorie, par mois, et par catégorie dans chaque mois */
 function stats(lignes, choix) {

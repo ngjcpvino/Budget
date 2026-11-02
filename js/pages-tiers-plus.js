@@ -4,7 +4,7 @@
 
 /* ----- Page Tiers : ce que chaque tiers doit à chacun (tout jusqu'au 31 décembre de l'année choisie); toucher un tiers ouvre ses transactions de l'année ----- */
 function pageTiers() {
-  const [N, J] = donnees.p, y = anneeCourante, maintenant = soldes(lignesJusqua(y + '-12-31')).ti, avant = soldes(lignesJusqua((y - 1) + '-12-31')).ti;
+  const [N, J] = donnees.p, y = anneeCourante, maintenant = soldesAu(y).ti, avant = soldesAu(y - 1).ti;
   const lignes = depensesAnnee(), rien = { [N]: 0, [J]: 0 };
   return donnees.tiers.map(t => {
     const o = maintenant[t] || rien;
