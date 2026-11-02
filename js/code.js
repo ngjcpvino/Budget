@@ -1,8 +1,9 @@
 /* =====================================================================
    LE CODE D'ENTRÉE (4 chiffres), ET LA LIAISON D'UN APPAREIL (6 chiffres, une seule fois)
-   - Un appareil neuf n'a pas de clé : il demande le code de liaison (ancienne app : Plus → Relier la nouvelle app).
+   - Un appareil neuf n'a pas de clé : il demande le code de liaison (sur un appareil relié : Plus → Relier un autre appareil;
+     en secours, l'ancienne adresse, sous la connexion Google).
      La feuille l'échange contre une clé longue, gardée dans l'appareil; on ne la tape jamais.
-   - Puis, à l'ouverture et après 5 minutes sans s'en servir : le code d'entrée, sur un pavé; rien du budget ne paraît derrière.
+   - Puis, à l'ouverture, après 5 minutes sans s'en servir, et sur Plus → Déconnexion : le code d'entrée, sur un pavé; rien du budget ne paraît derrière.
      L'appareil garde le sel et l'empreinte du bon code (jamais le code) pour vérifier sans réseau; la feuille le vérifie à chaque appel.
      Un code que l'appareil ne reconnaît pas est vérifié par la feuille (code changé ailleurs, ou effacé parce qu'oublié).
      La 1re fois sur un appareil, il faut le réseau. 5 essais manqués : une minute d'attente.
@@ -24,6 +25,7 @@ const TEXTES_CODE = {
 let code = {};                 // { sel, e } : le sel et l'empreinte du bon code
 let verrou = null;             // l'écran du code, quand il est là
 let derniereActivite = Date.now();
+let courrielLiaison = '';       // l'adresse où le dernier code de liaison est parti (gardée dans l'appareil)
 
 const garderCode = o => {
   code = o;
@@ -158,15 +160,29 @@ async function relier(v, chiffres) {
   verrouiller();
 }
 /* Plus → Relier un autre appareil : un code de liaison à 6 chiffres (10 minutes, une seule fois), à taper dans l'autre appareil */
+/* Plus → Relier un autre appareil : la feuille donne un code de liaison et l'envoie par courriel, avec le lien de l'app.
+   L'adresse de la dernière fois reste sur l'appareil (jamais dans la feuille). Courriel raté : la fenêtre le dit, le code reste bon. */
+const COURRIEL_VALIDE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 async function relierAutreAppareil() {
+  const champ = trouver('#f_courriel'), bouton = trouver('#b_courriel'), adresse = champ.value.trim();
+  if (!adresse) return afficherMessage("Écris l'adresse courriel.");
+  if (!COURRIEL_VALIDE.test(adresse)) return afficherMessage("Cette adresse courriel n'a pas l'air bonne.");
+  if (bouton.disabled) return;
+  bouton.disabled = true;
   try {
-    const r = await appelServeur('nouvelleLiaison');
+    const r = await appelServeur('nouvelleLiaison', { courriel: adresse });
+    courrielLiaison = adresse;
+    ecrireMemoire({ etat: { courriel: adresse } });
     ouvrirFenetre(`<h2>Code de liaison</h2><p class=gros-chiffre><b>${r.code.slice(0, 3)} ${r.code.slice(3)}</b></p>`
-      + `<p class=texte-discret>Tape-le dans l'autre appareil d'ici ${r.minutes} minutes. Il ne sert qu'une fois.</p>`
+      + `<p class=texte-discret>${r.envoye ? `Le lien de l'app et ce code sont partis par courriel à ${securiser(adresse)}. Tape-le` : "Le courriel n'a pas pu partir. Tape ce code"}`
+      + ` dans l'autre appareil d'ici ${r.minutes} minutes. Il ne sert qu'une fois.</p>`
       + '<div class="boutons espace-haut"><button class=bouton-principal onclick="fermerFenetre()">Fermer</button></div>');
   } catch (e) {
     if (erreurCle(e) || erreurCode(e)) return;
-    afficherMessage(e.message === 'reseau' ? 'Il faut le réseau pour donner un code de liaison.' : 'Connexion impossible : réessaie.');
+    afficherMessage(e.message === 'reseau' ? 'Il faut le réseau pour relier un appareil.'
+      : /COURRIEL:/.test(e.message) ? "Cette adresse courriel n'a pas l'air bonne." : 'Connexion impossible : réessaie.');
+  } finally {
+    bouton.disabled = false;
   }
 }
 
