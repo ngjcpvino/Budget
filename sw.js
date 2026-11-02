@@ -5,10 +5,10 @@
    Ne touche jamais à la feuille (les appels POST vers Apps Script).
    ===================================================================== */
 
-const CACHE_APP = 'budget-app-v1';
+const CACHE_APP = 'budget-app-v2';
 
 const FICHIERS = [
-  './', 'index.html', 'styles.css', 'manifest.webmanifest', 'icone-180.png', 'icone-512.png',
+  './', 'index.html', 'styles.css', 'manifest.webmanifest', 'icone-152.png', 'icone-167.png', 'icone-180.png', 'icone-512.png',
   'js/socle.js', 'js/etat.js', 'js/modele.js', 'js/memoire.js', 'js/serveur.js', 'js/pages-accueil.js', 'js/pages-depenses.js',
   'js/pages-placements.js', 'js/pages-comptes.js', 'js/pages-tiers-plus.js', 'js/formulaires.js', 'js/modifier.js',
   'js/recurrentes.js', 'js/releve.js', 'js/code.js', 'js/demarrage.js'
