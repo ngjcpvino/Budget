@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Budget">
+<meta name="theme-color" content="#ffffff">
+<title>Budget</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icone-180.png">
+<link rel="icon" href="icone-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="verrou"></div>
+<header>
+  <h1 id="titre"></h1>
+  <select id="annees" onchange="changerAnnee(this.value)"></select>
+  <button class="bouton-ajouter carre bouton-principal" onclick="nouvelleEntree()" aria-label="Nouvelle entrée"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+</header>
+<div id="bande" class="bande"></div>
+<main id="contenu"></main>
+<div id="message"></div>
+<nav id="navigation"></nav>
+<input type="file" id="fr" accept=".csv,text/csv" hidden onchange="lireReleve(this)">
+<div id="modale" onclick="if(event.target==this)fermerFenetre()"><div id="feuille"></div></div>
+<script src="js/socle.js"></script>
+<script src="js/etat.js"></script>
+<script src="js/modele.js"></script>
+<script src="js/memoire.js"></script>
+<script src="js/serveur.js"></script>
+<script src="js/pages-accueil.js"></script>
+<script src="js/pages-depenses.js"></script>
+<script src="js/pages-placements.js"></script>
+<script src="js/pages-comptes.js"></script>
+<script src="js/pages-tiers-plus.js"></script>
+<script src="js/formulaires.js"></script>
+<script src="js/modifier.js"></script>
+<script src="js/recurrentes.js"></script>
+<script src="js/releve.js"></script>
+<script src="js/code.js"></script>
+<script src="js/demarrage.js"></script>
+</body>
+</html>

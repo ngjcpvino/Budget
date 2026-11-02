@@ -1,0 +1,263 @@
+/* =====================================================================
+   1. LES COULEURS ET LES RÉGLAGES : tout se change ici, une seule fois
+   ===================================================================== */
+:root{
+  /* Base */
+  --couleur-fond:#fff;
+  --couleur-champ:#fbf5ee;
+  --couleur-texte:#2e1d12;
+  --couleur-texte-discret:#85705f;
+  --couleur-ligne:#ecdfd1;
+  --couleur-sur-couleur:#fff;
+  --couleur-sur-couleur-doux:rgba(255,255,255,.82);
+
+  /* Couleurs vives d'automne */
+  --couleur-principale:#d9480f;   /* citrouille */
+  --couleur-n:#800020;            /* bordeaux */
+  --couleur-jc:#55801a;           /* olive */
+  --couleur-danger:#d6291f;       /* rouge érable */
+
+  /* Voile derrière une fenêtre */
+  --couleur-voile:rgba(46,29,18,.6);
+
+  /* Les 12 couleurs des catégories (dans l'ordre d'attribution) */
+  --categorie-1:#d9480f;   /* citrouille */
+  --categorie-2:#800020;   /* bordeaux */
+  --categorie-3:#c98400;   /* moutarde */
+  --categorie-4:#55801a;   /* olive */
+  --categorie-5:#c92a2a;   /* rouge érable */
+  --categorie-6:#2d6a4f;   /* vert forêt */
+  --categorie-7:#7b2d5b;   /* prune */
+  --categorie-8:#6f4518;   /* chocolat */
+  --categorie-9:#b5651d;   /* cuivre */
+  --categorie-10:#3f6f8a;  /* bleu ardoise */
+  --categorie-11:#d6336c;  /* canneberge */
+  --categorie-12:#f08c00;  /* ambre */
+
+  /* Les 4 tailles de texte de toute l'app : le titre reste toujours le plus gros */
+  --taille-titre:30px;
+  --taille-gros:22px;
+  --taille-texte:16px;
+  --taille-petit:14px;
+
+  /* Police et largeur */
+  --police:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --largeur-page:720px;
+  --hauteur-champ:44px;
+  --espace:12px;
+  /* Le haut de l'écran : sur l'iPad, en mode app, une barre floue (24 points) couvre le haut; tout commence sous elle */
+  --haut-ecran:max(env(safe-area-inset-top),24px);
+
+  color-scheme:light;
+}
+
+/* =====================================================================
+   2. LA BASE : page, titres, textes (coins carrés partout)
+   ===================================================================== */
+*{box-sizing:border-box;scrollbar-width:none;border-radius:0}
+*::-webkit-scrollbar{display:none}
+body{margin:0;font:var(--taille-texte)/1.4 var(--police);background:var(--couleur-fond);color:var(--couleur-texte);padding-bottom:100px}
+h1{margin:0 auto 0 0;font-size:var(--taille-titre);font-weight:800;color:var(--couleur-principale);white-space:nowrap}
+h2{margin:0 0 14px;font-size:var(--taille-gros);font-weight:700}
+h3{margin:0 0 10px;font-size:var(--taille-texte);font-weight:700;color:var(--couleur-texte-discret)}
+small{display:block}
+small,.texte-discret,.sous-texte{color:var(--couleur-texte-discret)}
+small,.texte-discret,.sous-texte,label{font-size:var(--taille-petit)}
+.sous-texte{margin-top:6px}
+label{display:block;margin-bottom:var(--espace);color:var(--couleur-texte-discret)}
+label select,label input,label button{color:var(--couleur-texte);font-size:var(--taille-texte)}
+label select,label input{display:block;margin-top:4px}
+
+/* La page est une colonne centrée : bien remplie sur iPad, étroite sur ordinateur */
+header,main,#navigation,#feuille{max-width:var(--largeur-page);margin-inline:auto}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;background:var(--couleur-fond);border-bottom:1px solid var(--couleur-ligne);padding:calc(var(--haut-ecran) + 10px) 16px 10px}
+/* Le menu des années prend la largeur de sa plus longue option : on le borne pour garder le titre sur une ligne */
+header select{width:auto;max-width:45%;background-color:var(--couleur-fond)}
+main{padding:14px 16px}
+
+/* =====================================================================
+   3. LES BOUTONS ET CHAMPS : un bouton est un bouton
+   ===================================================================== */
+.carte,.ligne-depense,.tuile,button,select,input,textarea{border:1px solid var(--couleur-ligne)}
+button,select,input,textarea{font:inherit;color:inherit;height:var(--hauteur-champ);padding:0 14px;width:100%;background:var(--couleur-champ);-webkit-appearance:none;appearance:none}
+button{cursor:pointer;background:var(--couleur-fond);width:auto}
+/* La flèche du menu déroulant est une image : sa couleur est la seule codée en dur (%2385705f = texte discret) */
+select{background:var(--couleur-champ) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%2385705f' stroke-width='2'/></svg>") no-repeat right 12px center;padding-right:34px}
+textarea{padding:8px}
+/* La date alignée comme les autres champs (sur iPad, elle se centre et se colle en haut sans ça) */
+input[type=date]{text-align:left;line-height:calc(var(--hauteur-champ) - 2px)}
+input[type=date]::-webkit-date-and-time-value{text-align:left;line-height:inherit;margin:0}
+.zone-copie{height:170px;font:var(--taille-petit) monospace}
+input[type=search]{margin-bottom:10px}
+
+/* Les variantes de bouton ne changent que la couleur */
+button.bouton-principal,.choix .actif,.choix-icones .actif{background:var(--couleur-principale);border-color:var(--couleur-principale);color:var(--couleur-sur-couleur);font-weight:700}
+.bouton-danger{background:transparent;color:var(--couleur-danger);border-color:var(--couleur-danger)}
+.choix button,.choix-icones button{color:var(--couleur-texte)}
+/* Un symbole centré dans un carré : les boutons carrés (le + de l'en-tête, le ✕ du perso, le + des parts, la case du relevé) et l'icône d'une ligne */
+.carre,.icone{flex:none;display:grid;place-items:center;font-size:var(--taille-gros)}
+.carre{width:var(--hauteur-champ);padding:0}
+/* Une icône au-dessus de son mot (la barre du bas, la bande du +) */
+.icone-mot{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;font-size:var(--taille-petit)}
+
+/* Rangées de boutons (même largeur, toute la ligne) et de filtres */
+.boutons,.filtres{display:flex;gap:8px;flex-wrap:wrap}
+.boutons>button{flex:1}
+.filtres{margin-bottom:10px}
+.filtres>*{flex:1 1 140px}
+.filtres>.coche{flex-basis:70px}
+.espace-haut{margin-top:var(--espace)}
+
+/* Choix par boutons (qui a payé, mode de paiement, icônes) */
+.choix{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.choix button{flex:1 1 auto}
+.choix-icones{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:6px}
+.choix-icones button{padding:0;font-size:var(--taille-gros);width:100%}
+.champ-montant{font-size:var(--taille-gros);font-weight:700;text-align:center;height:56px;margin-bottom:var(--espace)}
+.deux-colonnes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* Des cartes côte à côte (les parts de la MC sur l'Accueil), puis une petite ligne dessous */
+.cartes{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.cartes>.carte{margin:0}
+.cartes+.texte-discret{margin:6px 0 var(--espace)}
+/* La part d'un tiers sur la MC : une carte blanche au contour orange */
+.tiers-mc{border-color:var(--couleur-principale)}
+/* Les parts « Juste pour » : la personne, le montant, puis le + (un carré) sur la dernière rangée */
+.part{display:grid;grid-template-columns:1fr 1fr var(--hauteur-champ);gap:10px;margin-top:4px}
+.part select,.part input{margin-top:0}
+
+/* =====================================================================
+   4. LES CARTES ET LES LIGNES
+   ===================================================================== */
+.carte p,.titre-bloc,.mode-actif,.categorie-nom{display:flex;justify-content:space-between;align-items:baseline}
+.carte{background:var(--couleur-fond);padding:16px;margin-bottom:var(--espace)}
+.carte p{margin:6px 0}
+.vide{text-align:center;color:var(--couleur-texte-discret);padding:30px 10px}
+b.negatif{color:var(--couleur-danger)}
+/* Un montant sur sa propre ligne; en gros et orange dans une grande carte et sous le titre d'un placement ou d'un compte */
+.tuile b,.case-date b,.annees b,.grande>b,.gros-chiffre b{display:block}
+.grande>b,.gros-chiffre b{font-size:var(--taille-gros);color:var(--couleur-principale)}
+
+/* Grandes cartes (dépenses communes, ce qu'il reste à payer sur la MC, à payer sur les cartes) */
+.grande{text-align:center;padding:18px 16px}
+.grande>b{margin:2px 0}
+/* « Qui doit à qui » : dans la couleur de celui qui doit (personne-1 ou personne-2) */
+.solde{background:var(--personne);border-color:var(--personne);color:var(--couleur-sur-couleur)}
+.solde>b{color:var(--couleur-sur-couleur)}
+.solde small{color:var(--couleur-sur-couleur-doux)}
+
+/* Une couleur par personne : on la change dans :root */
+.personne-1,.texte-n{--personne:var(--couleur-n)}
+.personne-2,.texte-jc{--personne:var(--couleur-jc)}
+.texte-n,.texte-jc{color:var(--personne)}
+/* Un texte orange (le + des parts, la note sous une ligne du relevé) */
+.texte-principal{color:var(--couleur-principale)}
+
+/* Premier rectangle de l'Accueil : une colonne par personne (l'une sous l'autre sur iPhone) */
+.separe{border-top:1px solid var(--couleur-ligne);margin-top:16px;padding-top:14px;text-align:left}
+.colonnes{display:grid;grid-template-columns:1fr 1fr}
+.colonnes>div{padding-left:20px}
+.colonnes>div:first-child{padding:0 20px 0 0;border-right:1px solid var(--couleur-ligne)}
+.colonnes h3{margin-bottom:6px}
+.colonnes p{margin:4px 0}
+/* Chaque montant garde la place de la flèche : les trois montants s'alignent, la flèche reste au bout de la ligne Perso */
+.colonnes p b{color:var(--couleur-texte);font-size:var(--taille-texte);padding-right:14px;position:relative}
+.colonnes .total{border-top:1px solid var(--couleur-ligne);padding-top:6px}
+.colonnes .total,.colonnes .actif{color:var(--couleur-texte);font-weight:700}
+.touche{cursor:pointer}
+.touche b:after{content:'›';position:absolute;right:0;color:var(--couleur-texte-discret);font-weight:400}
+@media (max-width:500px){
+  .colonnes{grid-template-columns:1fr}
+  .colonnes>div,.colonnes>div:first-child{padding:0;border:0}
+  .colonnes>div+div{margin-top:12px}
+}
+/* Le perso choisi sur l'Accueil, avec son ✕ pour revenir aux communes */
+.mode-actif{align-items:center;padding:8px 8px 8px 16px;font-weight:700}
+
+/* Les enveloppes de l'Accueil : une tuile par enveloppe */
+.titre-bloc h3{margin-bottom:8px}
+.tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--espace)}
+.tuile{display:flex;align-items:center;gap:12px;padding:12px 30px 12px 12px;position:relative;cursor:pointer}
+/* Le › dit qu'on peut toucher */
+.tuile:after,.carte-categorie:after,.tiers:after{content:'›';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:var(--taille-gros);color:var(--couleur-texte-discret)}
+
+/* Gros chiffre d'une carte (solde d'une enveloppe, d'un compte) */
+.gros-chiffre{margin-bottom:8px}
+
+/* Lignes de dépenses : la date dans une petite case à gauche */
+.ligne-depense{display:flex;align-items:center;gap:var(--espace);background:var(--couleur-fond);padding:10px 12px;margin-bottom:6px;cursor:pointer}
+.ligne-depense>div{flex:1;min-width:0}
+.ligne-depense>.case-date{flex:none;width:44px;text-align:center;line-height:1.1}
+.icone{width:38px;height:38px;background:var(--couleur-champ)}
+.titre-date{margin:18px 0 6px}
+
+/* Tiers : toucher la carte ouvre ses transactions juste en dessous */
+.tiers{position:relative;cursor:pointer;padding-right:38px}
+.tiers:after{right:14px;top:10px;transform:none}
+.tiers.ouvert:after{transform:rotate(90deg)}
+.liste-tiers{margin-top:var(--espace);border-top:1px solid var(--couleur-ligne)}
+.rangee-tiers{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid var(--couleur-ligne)}
+.rangee-tiers:last-child{border-bottom:0}
+.rangee-tiers .quand{width:64px;flex:none}
+.rangee-tiers .quoi{flex:1;min-width:0}
+.rangee-tiers small{display:inline;margin-left:6px}
+
+/* Cartes de catégories : --c est la couleur de la catégorie, fournie par le JS */
+.carte-categorie{cursor:pointer;position:relative;padding:14px 38px 14px 16px}
+.categorie-nom{color:var(--couleur-texte-discret);margin-bottom:8px}
+.categorie-nom b{color:var(--couleur-texte)}
+.categorie-nom b span{font-weight:400}
+.piste{height:14px;overflow:hidden;background:var(--couleur-ligne);background:color-mix(in srgb,var(--c) 18%,var(--couleur-fond))}
+.piste i{display:block;height:100%;background:var(--c)}
+
+/* Comparatif : les années en rangée, chacune avec son écart */
+.annees{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.annees>div{border-left:3px solid var(--c);padding:2px 0 2px 8px}
+
+/* Graphique des mois */
+.graphique{position:relative;height:150px;display:flex;gap:6px;border-bottom:1px solid var(--couleur-ligne)}
+.colonne{flex:1;display:flex;align-items:flex-end;cursor:pointer}
+.pile{width:100%;display:flex;flex-direction:column-reverse;min-height:2px}
+.pile i{display:block}
+.ligne-moyenne{position:absolute;left:0;right:0;border-top:2px dashed var(--couleur-texte);z-index:2;pointer-events:none}
+.etiquettes-mois{display:flex;gap:6px;margin-top:4px}
+.etiquettes-mois span{flex:1;text-align:center}
+/* Sur iPhone, la première lettre du mois seulement (data-i) */
+@media (max-width:500px){
+  .etiquettes-mois span{font-size:0}
+  .etiquettes-mois span:before{content:attr(data-i);font-size:var(--taille-petit)}
+}
+
+/* =====================================================================
+   5. NAVIGATION, BOUTON + DE L'EN-TÊTE, FENÊTRE, MESSAGE
+   ===================================================================== */
+#navigation{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--couleur-fond);border-top:1px solid var(--couleur-ligne);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+#navigation button{flex:1;height:62px;background:none;border:0;color:var(--couleur-texte-discret);gap:3px}
+#navigation .actif{color:var(--couleur-principale)}
+#navigation svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+/* Le + de l'en-tête (nouvelle entrée) : un carré orange (carre bouton-principal), le + dessiné pour être bien centré */
+.bouton-ajouter svg{width:22px;height:22px;stroke:var(--couleur-sur-couleur);stroke-width:2.4;stroke-linecap:round;fill:none}
+.bouton-ajouter.ouvert svg{transform:rotate(45deg)}
+/* La bande du + : 5 carrés à la place de « Dépenses communes », par-dessus la page (la page ne bouge pas; placée par placerBande) */
+.bande{display:none;position:absolute;z-index:4;justify-content:space-around;align-items:center;background:var(--couleur-fond);border:1px solid var(--couleur-ligne)}
+.bande.ouvert{display:flex}
+.bande button{flex:0 1 80px;min-width:0;height:76px;gap:2px;line-height:1.15}
+.bande .icone{background:none;width:auto;height:auto}
+
+#modale{position:fixed;inset:0;background:var(--couleur-voile);display:none;z-index:9}
+#modale.actif{display:block}
+#feuille{background:var(--couleur-fond);height:100%;overflow:auto;padding:calc(var(--haut-ecran) + 16px) 16px 40px}
+
+/* L'écran du code : par-dessus tout dès le premier instant (rien du budget ne paraît derrière); les messages passent devant */
+#verrou{position:fixed;inset:0;z-index:15;background:var(--couleur-fond);overflow:auto;padding:calc(var(--haut-ecran) + 40px) 16px 40px}
+#verrou.cache{display:none}
+.code{display:flex;flex-direction:column;align-items:center;gap:18px}
+.code h1,.code p{margin:0}
+/* Les chiffres touchés : 4 petits carrés orange; le pavé : des boutons carrés (.carre), plus grands */
+.points{display:flex;gap:14px}
+.points i{width:18px;height:18px;border:2px solid var(--couleur-principale)}
+.points i.plein{background:var(--couleur-principale)}
+.pave{display:grid;grid-template-columns:repeat(3,76px);gap:10px}
+.pave .carre{width:76px;height:76px;font-weight:600}
+
+#message{position:fixed;top:calc(var(--haut-ecran) + 10px);left:50%;transform:translateX(-50%);background:var(--couleur-texte);color:var(--couleur-fond);padding:8px 14px;z-index:20;display:none;font-size:var(--taille-petit);max-width:90%}
