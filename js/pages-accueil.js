@@ -21,12 +21,18 @@ function afficherNavigation() {
     .join('');
 }
 
-/* Aller à une page (f : des filtres pour la page Dépenses). Rouvrir l'Accueil le remet aux communes; changer de page referme la liste d'un tiers */
+/* Aller à une page. Chaque page s'ouvre avec ses choix de départ, même si on y était (J-C, 2026-11-03) :
+   Dépenses en Catégories, toute l'année, les communes, sans recherche, par date (f : les choix donnés en touchant une catégorie
+   ou un mois de l'Accueil); un placement ou un compte : toute l'année, par date. L'Accueil revient aux communes; la liste d'un tiers se referme */
 function aller(page, f) {
   vue = page;
-  if (f) {
+  if (page === 'list') {
     filtres = { m: '', c: '', p: '', q: '', ...f };
-    niveau = f.c ? 'd' : 'c';
+    niveau = f && f.c ? 'd' : 'c';
+  }
+  if (['list', 'pl', 'cl'].includes(page)) {
+    tri = 'd';
+    moisLignes = '';
   }
   if (page === 'home') modeAccueil = '';
   tiersOuvert = '';
@@ -61,6 +67,8 @@ function changerAnnee(choix) {
   nouvelleEntree(false);
   if (choix === 'cmp') {
     vue = 'cmp';
+    cmpMode = '';
+    cmpPeriode = 'p';
     return afficher();
   }
   vue = 'home';

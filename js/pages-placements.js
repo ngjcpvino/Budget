@@ -29,7 +29,6 @@ const finAnnee = y => y < new Date().getFullYear() ? ' au 31 décembre ' + y : '
 /* La page d'un placement (toucher sa tuile sur l'Accueil) : placés, intérêts et remises en plus, payé sur la carte en moins */
 function voirPlacement(nom) {
   placementOuvert = nom;
-  moisLignes = '';
   aller('pl');
 }
 function pagePlacement() {

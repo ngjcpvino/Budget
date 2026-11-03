@@ -32,7 +32,6 @@ function pageComptes() {
    et « Reporté » (ce qui restait à payer au 31 décembre d'avant). Un débit ou un comptant : ce qui a été payé avec lui, sans report */
 function voirCompte(cle) {
   compteOuvert = cle;
-  moisLignes = '';
   aller('cl');
 }
 function pageCompteLignes() {
