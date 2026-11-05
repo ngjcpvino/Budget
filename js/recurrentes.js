@@ -1,6 +1,6 @@
 /* =====================================================================
    LES RÉCURRENTES : codées une fois, elles s'ajoutent seules aux dépenses
-   Les modèles (fréquence « Sans date », x) : des dépenses semblables, sans date fixe; ils ne s'ajoutent jamais seuls
+   Les modèles (fréquence « Aléatoire », x) : des dépenses semblables, sans date fixe; ils ne s'ajoutent jamais seuls
    (on part d'un modèle en haut d'une nouvelle dépense : formulaires.js)
    Chaque occurrence a un identifiant fixe : « g » + la récurrence + sa date d'origine. Elle n'est jamais refaite :
    une ligne qu'on a déplacée à une autre date, ou corrigée, garde son identifiant et reste telle quelle.
@@ -38,7 +38,7 @@ const lireRecurrente = () => ({ ...lireFormulaire(), id: trouver('#f_id').value,
 
 /* Une rangée de la liste : une récurrente (sa fréquence, depuis quand) ou un modèle (son compte; son montant, ou « à entrer ») */
 const rangeeRecurrente = r => `<div class=ligne-depense onclick="pageRecurrentes('${r.id}')"><span class=icone>${ICONES_TYPE[r.type] || iconeCategorie(r.cat) || ''}</span>`
-  + `<div><b>${securiser(r.desc)}</b><small>${r.freq === 'x' ? 'Sans date' + (r.mode ? ' · ' + securiser(r.mode) : '') : FREQUENCES[r.freq] + ' · dès le ' + r.start}</small></div>`
+  + `<div><b>${securiser(r.desc)}</b><small>${FREQUENCES[r.freq] + (r.freq === 'x' ? (r.mode ? ' · ' + securiser(r.mode) : '') : ' · dès le ' + r.start)}</small></div>`
   + (r.freq === 'x' && !+r.amt ? '<small>à entrer</small>' : `<b>${argent(r.amt)}</b>`) + '</div>';
 
 function pageRecurrentes(id, pre) {
@@ -47,7 +47,7 @@ function pageRecurrentes(id, pre) {
     return ouvrirFenetre(`<h2>Récurrentes</h2><p class=texte-discret>Codées une fois, elles s'ajoutent seules aux dépenses.</p>`
       + (liste.map(rangeeRecurrente).join('') || '<div class=vide>Aucune récurrente.</div>')
       + `<h3 class=espace-haut>Modèles</h3><p class=texte-discret>Ils ne s'ajoutent jamais seuls : on part d'un modèle en haut d'une nouvelle dépense.</p>`
-      + (modeles().map(rangeeRecurrente).join('') || '<div class=vide>Aucun modèle. Touche « + Nouvelle récurrente », puis la fréquence « Sans date (modèle) ».</div>')
+      + (modeles().map(rangeeRecurrente).join('') || '<div class=vide>Aucun modèle. Touche « + Nouvelle récurrente », puis la fréquence « Aléatoire (modèle) ».</div>')
       + `<div class="boutons espace-haut"><button onclick="fermerFenetre()">Fermer</button><button class=bouton-principal onclick="pageRecurrentes(null,{})">+ Nouvelle récurrente</button></div>`);
   }
   const base = id ? donnees.rec.find(x => x.id === id) : {};
@@ -57,7 +57,7 @@ function pageRecurrentes(id, pre) {
   if (modele && !e.pj) e.pj = partsModele(e);
   rouvrir = o => pageRecurrentes(o.id || null, o);
   lireEtat = lireRecurrente;
-  const frequence = `<label>Fréquence<select id=f_fq onchange="rafraichirFormulaire()">${options(Object.entries({ ...FREQUENCES, x: 'Sans date (modèle)' }), e.freq)}</select></label>`;
+  const frequence = `<label>Fréquence<select id=f_fq onchange="rafraichirFormulaire()">${options(Object.entries({ ...FREQUENCES, x: 'Aléatoire (modèle)' }), e.freq)}</select></label>`;
   ouvrirFenetre(`<h2>${modele ? (e.id ? 'Modifier le modèle' : 'Nouveau modèle') : e.id ? 'Modifier la récurrente' : 'Nouvelle récurrente'}</h2><input type=hidden id=f_id value="${e.id || ''}">${champsFormulaire(e, true)}`
     + (modele ? frequence : `<div class=deux-colonnes>${frequence}<label>Dernière date (facultatif)<input id=f_end type=date value="${e.end || ''}"></label></div>`)
     + `<div class="boutons espace-haut">${e.id ? `<button class=bouton-danger onclick="supprimerRecurrente('${e.id}')">Supprimer</button>` : ''}<button onclick="pageRecurrentes()">Retour</button><button class=bouton-principal onclick="enregistrerRecurrente()">Enregistrer</button></div>`);

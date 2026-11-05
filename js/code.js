@@ -1,7 +1,8 @@
 /* =====================================================================
    LE CODE D'ENTRÉE (4 chiffres), ET LA LIAISON D'UN APPAREIL (6 chiffres, une seule fois)
-   - Un appareil neuf n'a pas de clé : il demande le code de liaison (sur un appareil relié : Plus → Relier un autre appareil;
-     en secours, l'ancienne adresse, sous la connexion Google).
+   - Un appareil neuf n'a pas de clé : il demande le code de liaison. Le code vient par courriel, à l'adresse du budget
+     (« Recevoir un code par courriel », sur l'écran même), ou d'un appareil relié (Plus → Relier un autre appareil).
+     Dans Safari sur l'iPhone ou l'iPad, l'écran le dit : l'icône de l'écran d'accueil a sa propre mémoire (reliée dans Safari, elle redemanderait un code).
      La feuille l'échange contre une clé longue, gardée dans l'appareil; on ne la tape jamais.
    - Puis, à l'ouverture, après 5 minutes sans s'en servir, et sur Plus → Déconnexion : le code d'entrée, sur un pavé; rien du budget ne paraît derrière.
      L'appareil garde le sel et l'empreinte du bon code (jamais le code) pour vérifier sans réseau; la feuille le vérifie à chaque appel.
@@ -61,7 +62,10 @@ function dessinerCode() {
   const pave = v.etape !== 'attente' && v.etape !== 'reseau', touche = k => `<button class=carre onclick="toucherCode('${k}')">${k}</button>`;
   const annuler = ['actuel', 'nouveau', 'nouveau2'].includes(v.etape) ? '<button class="carre texte-discret" onclick="ouvrirApp()" aria-label="Annuler">✕</button>' : '<span></span>';
   const points = Array.from({ length: longueurCode() }, (x, i) => `<i${i < v.ch.length ? ' class=plein' : ''}></i>`).join('');
-  const aide = v.etape === 'liaison' ? "<p class=texte-discret>Sur un appareil déjà relié : Plus → Relier un autre appareil.</p>" : '';
+  const aide = v.etape !== 'liaison' ? ''
+    : `<button onclick="codeParCourriel()"${v.envoi ? ' disabled' : ''}>${v.envoi ? 'Envoi…' : 'Recevoir un code par courriel'}</button>`
+      + `<p class=texte-discret>${v.parti ? `Code parti par courriel à ${heureCourte(v.parti)}, bon 10 minutes.` : 'Ou, sur un appareil déjà relié : Plus → Relier un autre appareil.'}</p>`
+      + (navigator.standalone === false ? "<p class=texte-discret>Dans Safari, la liaison ne vaut que pour Safari : ajoute d'abord l'app à l'écran d'accueil (Partager → Sur l'écran d'accueil), puis relie-la par son icône.</p>" : '');
   trouver('#verrou').innerHTML = `<div class=code><h1>Budget</h1><p>${TEXTES_CODE[v.etape]}</p>`
     + (!pave ? (v.etape === 'reseau' ? '<button onclick="verrouiller()">Réessayer</button>' : '')
       : `<div class=points>${points}</div><div class=pave>${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(touche).join('')}${annuler}${touche(0)}<button class="carre texte-discret" onclick="toucherCode('&lt;')" aria-label="Effacer">⌫</button></div>${aide}`)
@@ -158,7 +162,28 @@ async function relier(v, chiffres) {
   afficherMessage('Appareil relié.');
   verrouiller();
 }
-/* Plus → Relier un autre appareil : un code de liaison à 6 chiffres (10 minutes, une seule fois), à taper dans l'autre appareil */
+/* Pas d'autre appareil sous la main : la feuille envoie un code à l'adresse du budget (on ne la tape pas, on ne la voit pas).
+   Au plus 3 par heure : au-delà, l'heure où réessayer. Un 2e toucher pendant l'envoi ne fait rien. */
+const heureCourte = t => { const d = new Date(t); return d.getHours() + ' h ' + String(d.getMinutes()).padStart(2, '0'); };
+async function codeParCourriel() {
+  const v = verrou;
+  if (!v || v.envoi) return;
+  v.envoi = true;
+  dessinerCode();
+  try {
+    const r = await appelServeur('codeParCourriel');
+    if (r.envoye) {
+      v.parti = Date.now();
+      afficherMessage('Le code est parti : regarde tes courriels.');
+    } else afficherMessage(r.apres ? `Trop de codes demandés : réessaie après ${heureCourte(r.apres)}.` : "Le courriel n'a pas pu partir : réessaie plus tard.");
+  } catch (e) {
+    afficherMessage(e.message === 'reseau' ? 'Il faut le réseau pour recevoir un code.' : 'Connexion impossible : réessaie.');
+  } finally {
+    v.envoi = false;
+    if (verrou === v) dessinerCode();
+  }
+}
+
 /* Plus → Relier un autre appareil : la feuille donne un code de liaison et l'envoie par courriel, avec le lien de l'app.
    Le courriel parti, le champ se vide (J-C, 2026-11-02; l'adresse n'est gardée nulle part). Courriel raté : la fenêtre le dit, le code reste bon, l'adresse reste dans le champ. */
 const COURRIEL_VALIDE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

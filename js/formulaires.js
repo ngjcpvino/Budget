@@ -205,7 +205,7 @@ function editerEntree(id, pre) {
   ouvrirFenetre(`<h2>${titre}</h2>${id || ligneReleve >= 0 || !['e', 'm'].includes(e.type) ? '' : choixModeles()}${champsFormulaire(e)}${boutonsBas(id, 'enregistrerEntree')}`);
 }
 
-/* ----- Les modèles (des récurrentes « Sans date ») : en haut d'une nouvelle dépense; en toucher un remplit le formulaire ----- */
+/* ----- Les modèles (des récurrentes « Aléatoire ») : en haut d'une nouvelle dépense; en toucher un remplit le formulaire ----- */
 const modeles = () => donnees.rec.filter(r => !r.del && r.freq === 'x');
 const choixModeles = () => modeles().length ? `<label>Partir d'un modèle<div class=choix>`
   + modeles().map(r => `<button type=button onclick="partirDuModele('${r.id}')">${ICONES_TYPE[r.type] || iconeCategorie(r.cat)} ${securiser(r.desc)}</button>`).join('') + '</div></label>' : '';

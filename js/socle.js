@@ -50,8 +50,8 @@ const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
 /* Pour comparer des noms : sans accents, sans majuscules, sans ponctuation */
 const simplifier = texte => String(texte || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
-/* x : un modèle, sans date (il ne s'ajoute jamais seul) */
-const FREQUENCES = { w: 'Chaque semaine', b: 'Aux 2 semaines', m: 'Chaque mois', q: 'Chaque trimestre', s: 'Aux 6 mois', x: 'Sans date' };
+/* x : un modèle, « Aléatoire » : sans date (il ne s'ajoute jamais seul) */
+const FREQUENCES = { w: 'Chaque semaine', b: 'Aux 2 semaines', m: 'Chaque mois', q: 'Chaque trimestre', s: 'Aux 6 mois', x: 'Aléatoire' };
 
 /* Les genres de lignes. Dans la feuille, la colonne Type garde ses mots (Transfert, Remboursement, Payé par l'enveloppe…).
    e dépense · m placement (mise de côté) · f intérêts ou remise · t paiement sur une carte · r paiement à une personne · p un placement paie la carte */
