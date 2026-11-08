@@ -15,7 +15,7 @@ const ICONES_NAVIGATION = {
   more: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
 };
 function afficherNavigation() {
-  const allume = page => vue === page || (page === 'more' && ['cpt', 'rel', 'cl'].includes(vue)) || (page === 'env' && vue === 'pl');
+  const allume = page => vue === page || (page === 'more' && ['cpt', 'rel', 'cl', 'gl'].includes(vue)) || (page === 'env' && vue === 'pl');
   trouver('#navigation').innerHTML = [['home', 'Accueil'], ['list', 'Dépenses'], ['env', 'Placements'], ['ti', 'Tiers'], ['more', 'Plus']]
     .map(([page, mot]) => `<button class="icone-mot${allume(page) ? ' actif' : ''}" onclick="aller('${page}')"><svg viewBox="0 0 24 24">${ICONES_NAVIGATION[page]}</svg>${mot}</button>`)
     .join('');
@@ -43,7 +43,7 @@ function aller(page, f) {
 /* Redessiner la page en cours */
 const PAGES = {
   home: () => pageAccueil(), list: () => pageDepenses(), ti: () => pageTiers(), env: () => pageEnveloppes(), pl: () => pagePlacement(),
-  cpt: () => pageComptes(), cmp: () => pageComparatif(), rel: () => pageReleve(), cl: () => pageCompteLignes(), more: () => pagePlus()
+  cpt: () => pageComptes(), cmp: () => pageComparatif(), rel: () => pageReleve(), cl: () => pageCompteLignes(), gl: () => pageGL(), more: () => pagePlus()
 };
 function afficher() {
   const titre = vue === 'cmp' ? 'Comparatif' : 'Budget ' + anneeCourante;

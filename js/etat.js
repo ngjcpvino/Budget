@@ -20,7 +20,7 @@ const PLACEMENT = '@p';
 
 /* L'écran.
    vue : home (Accueil) · list (Dépenses) · env (Placements) · pl (un placement) · ti (Tiers) · more (Plus) · cpt (Comptes)
-         · cl (un compte) · cmp (Comparatif) · rel (un relevé)
+         · cl (un compte) · gl (le GL : toutes les lignes) · cmp (Comparatif) · rel (un relevé)
    modeAccueil, filtres.p, cmpMode : '' = les communes, 't' = tout, sinon le nom d'une personne (son perso) */
 let anneeCourante = new Date().getFullYear();
 let vue = 'home';

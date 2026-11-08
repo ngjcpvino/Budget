@@ -1,5 +1,5 @@
 /* =====================================================================
-   COMPTES (Plus → Voir les soldes des comptes), la page d'un compte, et le formulaire d'un compte
+   COMPTES (Plus → Voir les soldes des comptes), la page d'un compte, le GL, et le formulaire d'un compte
    Une carte de crédit : « à payer ». Un débit ou un comptant : « payé en » (l'app ne voit pas l'argent qui y entre).
    Les chiffres viennent du modèle (calculerComptes, montantPourCompte).
    ===================================================================== */
@@ -26,6 +26,12 @@ function pageComptes() {
   return `<div class="carte grande"><small>À payer sur les cartes${fin}</small><b>${argent(cartes.reduce((s, x) => s + x.valeur, 0))}</b></div>`
     + bloc('Cartes de crédit', cartes, 'À payer' + fin) + bloc('Débit et comptant', autres, 'Payé en ' + y)
     + `<div class=texte-discret>Touche un compte pour voir ses lignes.</div><div class="boutons espace-haut"><button onclick="pageCompte()">+ Ajouter un compte</button></div>`;
+}
+
+/* Le GL (Plus → Comptes → GL; J-C, 2026-11-08) : toutes les lignes de l'année, comme Dépenses → Détail → Tout, mais sans les choix du haut */
+function pageGL() {
+  const lignes = depensesAnnee().sort((x, y) => y.d.localeCompare(x.d));
+  return lignes.map(e => rangee(e, partDe(e, 't'))).join('') || '<div class=vide>Rien à afficher.</div>';
 }
 
 /* La page d'un compte : ses lignes, comme celles d'un placement. Une carte : ce qui en sort en plus, les paiements reçus en moins,
