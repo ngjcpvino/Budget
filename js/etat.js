@@ -36,6 +36,7 @@ let cmpMode = '';
 let cmpPeriode = 'p';     // p : même période · c : années complètes
 let releve = null;        // le relevé de la banque en cours (releve.js)
 let ligneReleve = -1;     // la ligne du relevé ouverte dans un formulaire
+let retourReleve = 'more'; // la page d'où le relevé a été importé (le + → Import) : on y revient après
 
 /* Le comparatif : les années décochées restent décochées sur cet appareil */
 let decochees = [];

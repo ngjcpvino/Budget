@@ -49,7 +49,7 @@ function ajouterTiers() {
 
 /* ----- Page Plus ----- */
 function pagePlus() {
-  return `<div class=carte><h3>Données</h3><div class=boutons><button onclick="actualiser()">Actualiser</button><button onclick="copieSecurite()">Copie de sécurité</button><button onclick="trouver('#fr').click()">Importer un relevé</button></div></div>`
+  return `<div class=carte><h3>Données</h3><div class=boutons><button onclick="actualiser()">Actualiser</button><button onclick="copieSecurite()">Copie de sécurité</button></div></div>`
     + `<div class=carte><h3>Comptes</h3><div class=boutons><button onclick="aller('cpt')">Voir les soldes des comptes</button><button onclick="aller('gl')">GL</button></div></div>`
     + `<div class=carte><h3>Récurrentes</h3><div class=boutons><button onclick="pageRecurrentes()">Gérer les récurrentes</button></div></div>`
     + `<div class=carte><h3>Modifier</h3><div class=boutons><button onclick="listeModifiable('cats')">Catégories</button><button onclick="listeModifiable('tiers')">Tiers</button><button onclick="listeModifiable('env')">Placements</button><button onclick="listeModifiable('modes')">Comptes</button></div></div>`

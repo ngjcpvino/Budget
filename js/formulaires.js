@@ -168,7 +168,7 @@ function champsFormulaire(e, recurrente) {
 }
 
 /* ----- Le + de l'en-tête : une bande de 5 boutons par-dessus la page (le + devient un ✕); un choix referme la bande et ouvre son formulaire ----- */
-const ENTREES = [['🧾', 'Dépense', 'editerEntree()'], ['💳', 'Paiement', 'editerPaiement()'], ['🏦', 'Placement', "editerEntree(null,{type:'m'})"],
+const ENTREES = [['📥', 'Import', "trouver('#fr').click()"], ['🧾', 'Dépense', 'editerEntree()'], ['💳', 'Paiement', 'editerPaiement()'], ['🏦', 'Placement', "editerEntree(null,{type:'m'})"],
   ['📈', 'Intérêts', "editerEntree(null,{type:'f',desc:'Intérêts'})"], ['🎁', 'Remise', "editerEntree(null,{type:'f',desc:'Remise'})"]];
 function nouvelleEntree(ouvrir) {
   const bande = trouver('#bande');

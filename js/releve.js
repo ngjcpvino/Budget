@@ -1,5 +1,5 @@
 /* =====================================================================
-   LE RELEVÉ DE LA CARTE (le fichier CSV de la banque : Plus → Importer un relevé)
+   LE RELEVÉ DE LA CARTE (le fichier CSV de la banque : le + → Import)
    Tout le fichier est montré, sauf ce qui est déjà dans l'app; une case à cocher par ligne : rien n'entre avant d'être coché.
    Chaque achat arrive avec ce que l'historique propose (le nom, la catégorie, le « Juste pour » s'il est clair);
    une note sous la ligne dit ce qui manque.
@@ -48,6 +48,7 @@ function lireReleve(champ) {
     champ.value = '';
     const message = preparerReleve(texte);
     if (message) return afficherMessage(message);
+    if (vue !== 'rel') retourReleve = vue;
     aller('rel');
     scrollTo(0, 0);
   };
@@ -146,7 +147,7 @@ function pageReleve() {
     + (sautees ? `<p class=texte-discret>${sautees > 1 ? sautees + " lignes du fichier n'ont pas pu être lues" : "1 ligne du fichier n'a pas pu être lue"} (date ou montant).</p>` : '')
     + (deja ? `<p class=texte-discret>${deja > 1 ? deja + " lignes du fichier sont déjà dans l'app (cachées)" : "1 ligne du fichier est déjà dans l'app (cachée)"}.</p>` : '')
     + L.map(rangeeReleve).join('')
-    + `<div class="boutons espace-haut"><button onclick="releve=null;aller('more')">Annuler</button><button class=bouton-principal onclick="enregistrerReleve()">${cochees > 1 ? 'Enregistrer les ' + cochees + ' lignes cochées' : cochees ? 'Enregistrer la ligne cochée' : 'Enregistrer'}</button></div>`;
+    + `<div class="boutons espace-haut"><button onclick="releve=null;aller(retourReleve)">Annuler</button><button class=bouton-principal onclick="enregistrerReleve()">${cochees > 1 ? 'Enregistrer les ' + cochees + ' lignes cochées' : cochees ? 'Enregistrer la ligne cochée' : 'Enregistrer'}</button></div>`;
 }
 
 function cocherReleve(i) {
@@ -194,6 +195,6 @@ function enregistrerReleve() {
   });
   memoriser(changements);
   releve = null;
-  aller('more');
+  aller(retourReleve);
   afficherMessage(cochees.length > 1 ? cochees.length + ' lignes ajoutées.' : '1 ligne ajoutée.');
 }
