@@ -42,6 +42,8 @@ function verrouiller(etape) {
   trouver('#verrou').classList.remove('cache');
   dessinerCode();
   if (verrou.etape === 'attente') chercherSel();
+  /* Une nouvelle version attendait (demarrage.js) : l'écran du code, avant le premier chiffre, est le bon moment */
+  if (typeof rechargerSiPossible === 'function') rechargerSiPossible(false);
 }
 
 /* Pas encore d'empreinte sur cet appareil : le sel, et s'il y a déjà un code (sinon, on le choisit) */
