@@ -15,12 +15,14 @@ const CHOIX_TRI = [['d', 'Par date'], ['a', 'Par montant']];
 /* La date dans sa petite case : « 20 / oct. » (une ligne sans date : « ? ») */
 const caseDate = d => `<div class=case-date>${d ? `<b>${+d.slice(8)}</b><small>${MOIS_ABREGES[+d.slice(5, 7) - 1]}</small>` : '<b>?</b>'}</div>`;
 
-/* Une rangée de liste (Dépenses, un placement, un compte) : la date, l'icône, la description, le montant; toucher = son formulaire */
-function rangee(ligne, montant) {
+/* Une rangée de liste (Dépenses, un placement, un compte, le GL) : la date, l'icône, la description, le numéro d'écriture au début
+   de la petite ligne grise (J-C, 2026-11-09), le montant; toucher = son formulaire. notes (le GL) : titre (une annulation), apres (« annulée par… ») */
+function rangee(ligne, montant, notes = {}) {
   const [N, J] = donnees.p;
   const couleur = ligne.by === N ? 'texte-n' : ligne.by === J ? 'texte-jc' : '';
   return `<div class=ligne-depense onclick="editerEntree('${ligne.id}')">${caseDate(ligne.d)}<span class=icone>${ICONES_TYPE[ligne.type] || iconeCategorie(ligne.cat)}</span>`
-    + `<div><b>${securiser(ligne.desc || ligne.cat || LIBELLES_TYPE[ligne.type] || '')}</b><small>${detailsLigne(ligne)}</small></div><b class="${couleur}">${argent(montant)}</b></div>`;
+    + `<div><b>${securiser(notes.titre || ligne.desc || ligne.cat || LIBELLES_TYPE[ligne.type] || '')}</b><small>${ligne.no ? 'n° ' + ligne.no + ' · ' : ''}${detailsLigne(ligne)}${notes.apres || ''}</small></div>`
+    + `<b class="${couleur}">${argent(montant)}</b></div>`;
 }
 
 /* La petite ligne grise : qui paie et avec quoi (une dépense), qui paie qui (un paiement), ou le placement */

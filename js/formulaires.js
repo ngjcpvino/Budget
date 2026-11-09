@@ -195,6 +195,7 @@ function placerBande(bande) {
 /* Une ligne « Fermeture » d'une vieille année importée (elle ramène l'année à zéro le 31 décembre) ne se modifie pas */
 function editerEntree(id, pre) {
   if (id && /^imp\d{4}-fermeture/.test(id)) return afficherMessage("Ligne de fermeture de l'année : elle ne se modifie pas.");
+  if (id && ecritureFermee(id)) return afficherMessage(ecritureFermee(id));
   const base = id ? donnees.ex.find(x => x.id === id)
     : { type: 'e', d: '', by: donnees.p[0], mode: '', cat: '', amt: '', desc: '', env: vue === 'pl' ? placementOuvert : '' };
   const e = { ...base, ...(pre || {}) };
@@ -240,12 +241,46 @@ function objetEntree() {
   return o;
 }
 
-/* Une ligne neuve ou changée : dans l'app, gardée dans l'appareil, envoyée à la feuille */
+/* ----- Rien ne s'efface (J-C, 2026-11-09 : « en comptabilité on efface rien ») -----
+   Une ligne déjà partie vers la feuille ne change jamais : la supprimer = une écriture d'annulation (la même ligne, la même date,
+   les montants et les parts à l'inverse); la modifier = l'annulation, puis la nouvelle ligne. La feuille bâtit l'annulation elle-même
+   et donne les numéros; l'app montre tout de suite ce qu'elle bâtira (identifiant de la ligne + « ~a »).
+   Une ligne pas encore partie (sans réseau : elle attend dans la file) n'est pas encore écrite : elle se change sur place */
+const brouillon = x => !!x && !x.no && fileEnvois.some(e => !e.parti && (e.genre === 'ligne' || e.genre === 'creer') && e.objet && e.objet.id === x.id);
+function annulationDe(x, t) {
+  const a = { ...x, id: x.id + '~a', amt: -(+x.amt || 0), an: x.no || 0, no: 0, u: t };
+  ['nz', 'nz2', 'nz3'].forEach(k => { if (+a[k]) a[k] = -a[k]; });
+  delete a.del;
+  return a;
+}
+/* Une annulation, ou une ligne déjà annulée, ne s'ouvre plus (le GL les montre) */
+function ecritureFermee(id) {
+  const e = donnees.ex.find(x => x.id === id);
+  if (!e) return '';
+  if (estAnnulation(e)) return 'Une annulation ne se modifie pas.';
+  const a = donnees.ex.find(x => x.id === id + '~a');
+  return a ? 'Cette écriture est annulée' + (a.no ? ' par le n° ' + a.no : '') + '.' : '';
+}
+/* Rien de changé dans le formulaire : rien à écrire */
+const CHAMPS_ECRITURE = ['d', 'type', 'desc', 'cat', 'env', 'amt', 'by', 'mode', 'to', 'nz', 'nzf', 'nz2', 'nzf2', 'nz3', 'nzf3'];
+const memeEcriture = (x, o) => CHAMPS_ECRITURE.every(k => !(k in o) || (/^(amt|nz\d?)$/.test(k) ? (+x[k] || 0) === (+o[k] || 0) : String(x[k] || '') === String(o[k] || '')));
+
+/* Une ligne neuve, ou changée : dans l'app, gardée dans l'appareil, envoyée à la feuille */
 function garderLigne(id, o) {
-  let ligne;
-  if (id) ligne = Object.assign(donnees.ex.find(x => x.id === id), o, { u: Date.now() });
-  else donnees.ex.push(ligne = { ...o, id: nouvelId(), u: Date.now() });
-  memoriser([{ genre: 'ligne', objet: ligne }]);
+  const t = Date.now(), x = id ? donnees.ex.find(e => e.id === id) : null;
+  if (!x) {
+    const ligne = { ...o, id: nouvelId(), u: t };
+    donnees.ex.push(ligne);
+    memoriser([{ genre: 'ligne', objet: ligne }]);
+  } else if (brouillon(x)) {
+    Object.assign(x, o, { u: t });
+    memoriser([{ genre: 'ligne', objet: x }]);
+  } else if (!memeEcriture(x, o)) {
+    const nouvelle = { ...x, ...o, id: nouvelId(), u: t, no: 0, an: 0 };
+    delete nouvelle.del;
+    donnees.ex.push(annulationDe(x, t), nouvelle);
+    memoriser([{ genre: 'modifier', id, objet: nouvelle }]);
+  }
   fermerFenetre();
   afficher();
 }
@@ -255,11 +290,13 @@ function enregistrerEntree(id) {
   if (o) garderLigne(id, o);
 }
 function supprimerEntree(id) {
-  confirmer('Supprimer cette ligne ?', () => {
-    const ligne = donnees.ex.find(x => x.id === id);
-    ligne.del = true;
-    ligne.u = Date.now();
-    memoriser([{ genre: 'supprimer', id }]);
+  const x = donnees.ex.find(e => e.id === id), pasEcrite = brouillon(x);
+  confirmer(pasEcrite ? 'Supprimer cette ligne ?' : "Supprimer cette ligne ? Une écriture d'annulation sera ajoutée.", () => {
+    if (pasEcrite) oublierBrouillon(x);
+    else {
+      donnees.ex.push(annulationDe(x, Date.now()));
+      memoriser([{ genre: 'annuler', id }]);
+    }
     fermerFenetre();
     afficher();
   }, () => editerEntree(id));
@@ -271,6 +308,7 @@ function supprimerEntree(id) {
 const montantDu = t => auCent(Object.values(soldesAu(anneeCourante).ti[t] || {}).reduce((s, x) => s + Math.max(+x || 0, 0), 0));
 
 function editerPaiement(id, pre) {
+  if (id && ecritureFermee(id)) return afficherMessage(ecritureFermee(id));
   const [N, J] = donnees.p, carte = carteDe(N), b = id ? donnees.ex.find(x => x.id === id) : null;
   const e = {
     d: '', desc: '', amt: '', du: '', by: N, aq: 'mc', env: '', cat: '',

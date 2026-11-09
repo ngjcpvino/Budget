@@ -8,7 +8,8 @@
    Une ligne (comme dans la feuille) :
      d date · type · desc · cat · env (placement) · amt montant · by payé par
      mode (compte d'où part l'argent) · to (compte d'arrivée)
-     nz/nzf, nz2/nzf2, nz3/nzf3 (les parts « Juste pour » et pour qui) · del (supprimée)
+     nz/nzf, nz2/nzf2, nz3/nzf3 (les parts « Juste pour » et pour qui) · del (supprimée, avant le 2026-11-09)
+     no (le numéro d'écriture, donné par la feuille) · an (une écriture d'annulation : le numéro qu'elle annule)
    Les genres (type) : e dépense · m placement · f intérêts ou remise · t paiement sur une carte
      · r paiement à une personne (nzf = qui reçoit) · p un placement paie la carte (to = la carte, cat = la catégorie qui baisse)
    ===================================================================== */
@@ -98,7 +99,18 @@ function partDe(ligne, choix) {
 }
 
 /* ----- Les lignes ----- */
-const lignesVivantes = () => donnees.ex.filter(e => !e.del && e.d);
+/* Rien ne s'efface (J-C, 2026-11-09) : supprimer ou modifier une ligne ajoute une écriture d'annulation (les montants à l'inverse),
+   dont l'identifiant est celui de la ligne annulée + « ~a ». La ligne annulée et son annulation se répondent : elles ne comptent
+   nulle part (seul le GL les montre) */
+const estAnnulation = e => /~a$/.test(e.id);
+const idAnnule = e => e.id.slice(0, -2);
+function lignesVivantes() {
+  const annulees = new Set();
+  donnees.ex.forEach(e => { if (estAnnulation(e)) annulees.add(idAnnule(e)); });
+  return donnees.ex.filter(e => !e.del && e.d && !estAnnulation(e) && !annulees.has(e.id));
+}
+/* Le GL : toutes les écritures de l'année, les annulées et les annulations comprises */
+const ecrituresAnnee = () => donnees.ex.filter(e => !e.del && e.d && e.d.startsWith(anneeCourante));
 const depensesAnnee = () => lignesVivantes().filter(e => e.d.startsWith(anneeCourante));
 const lignesJusqua = fin => lignesVivantes().filter(e => e.d <= fin);
 /* Les dettes (qui doit à qui, les tiers) au 31 décembre d'une année */

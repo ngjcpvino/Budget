@@ -37,22 +37,31 @@ async function appelServeur(action, data = {}, delai = 30000) {
 }
 
 /* ----- Enregistrer : dans l'app (déjà fait par l'appelant), dans l'appareil, dans la file; puis l'envoi -----
-   changements : [{ genre: 'ligne' | 'creer', objet }, { genre: 'supprimer', id }, { genre: 'rec', objet }, { genre: 'supprimerRec', id }] */
+   changements : [{ genre: 'ligne' | 'creer', objet }, { genre: 'annuler', id }, { genre: 'modifier', id, objet (la nouvelle ligne) },
+   { genre: 'rec', objet }, { genre: 'supprimerRec', id }]. Pour annuler et modifier, l'annulation (id + « ~a ») est déjà dans l'app */
 function memoriser(changements) {
   const lignes = [], recurrentes = [], envois = [];
   changements.forEach(c => {
     const envoi = { n: Date.now() * 1000 + (numeroEnvoi++ % 1000), genre: c.genre };
+    if (c.id) envoi.id = c.id;
     if (c.objet) envoi.objet = JSON.parse(JSON.stringify(c.objet));
-    else envoi.id = c.id;
     envois.push(envoi);
     if (c.genre === 'ligne' || c.genre === 'creer') lignes.push(c.objet);
-    else if (c.genre === 'supprimer') lignes.push(donnees.ex.find(e => e.id === c.id));
+    else if (c.genre === 'annuler' || c.genre === 'modifier') lignes.push(c.objet, donnees.ex.find(e => e.id === c.id + '~a'));
     else if (c.genre === 'rec') recurrentes.push(c.objet);
     else if (c.genre === 'supprimerRec') recurrentes.push(donnees.rec.find(r => r.id === c.id));
   });
   fileEnvois.push(...envois);
   ecrireMemoire({ lignes: lignes.filter(Boolean), recurrentes: recurrentes.filter(Boolean), envois });
   synchroniser();
+}
+
+/* Une ligne pas encore partie vers la feuille, supprimée : elle n'a jamais été écrite; elle sort de l'app, de l'appareil et de la file */
+function oublierBrouillon(x) {
+  const ns = fileEnvois.filter(e => !e.parti && e.objet && e.objet.id === x.id).map(e => e.n);
+  fileEnvois = fileEnvois.filter(e => !ns.includes(e.n));
+  donnees.ex = donnees.ex.filter(e => e !== x);
+  ecrireMemoire({ retirer: ns, effacer: [x.id] });
 }
 
 /* Les Réglages ont changé (une catégorie, un tiers, un compte…) : ils partent d'un bloc, avec la version lue (base).
@@ -141,6 +150,13 @@ function enAttente() {
   const s = new Set();
   fileEnvois.forEach(e => {
     if (e.genre === 'cfg') return;
+    /* Annuler, modifier : la ligne, son annulation et la nouvelle ligne attendent ensemble */
+    if (e.genre === 'annuler' || e.genre === 'modifier') {
+      s.add('l:' + e.id);
+      s.add('l:' + e.id + '~a');
+      if (e.objet) s.add('l:' + e.objet.id);
+      return;
+    }
     s.add((e.genre === 'rec' || e.genre === 'supprimerRec' ? 'r:' : 'l:') + (e.id || e.objet.id));
   });
   return s;
@@ -195,6 +211,7 @@ async function appliquerReponse(r, partis) {
   (r.refuses || []).forEach(x => {
     toutARelire = true;
     messageApres = x.raison === 'REGLAGES:changes' ? "Les réglages ont changé sur l'autre appareil : refais ton dernier changement."
+      : x.raison === 'LIGNE:changee' ? "Cette ligne a été modifiée sur l'autre appareil : ta modification n'a pas été enregistrée."
       : 'Pas enregistré (' + x.raison + ') : vérifie la ligne et recommence.';
   });
   if (r.generation && generation && r.generation !== generation) toutARelire = true;

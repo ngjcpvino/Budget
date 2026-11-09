@@ -57,8 +57,9 @@ async function lireMemoire() {
   }
 }
 
-/* Une seule opération : tout passe, ou rien. vider : remplacer toutes les lignes et récurrentes (après une lecture complète) */
-async function ecrireMemoire({ lignes = [], recurrentes = [], etat = {}, envois = [], retirer = [], vider = false }) {
+/* Une seule opération : tout passe, ou rien. vider : remplacer toutes les lignes et récurrentes (après une lecture complète);
+   effacer : des lignes jamais écrites dans la feuille (un brouillon supprimé) */
+async function ecrireMemoire({ lignes = [], recurrentes = [], etat = {}, envois = [], retirer = [], effacer = [], vider = false }) {
   const base = await ouvrirMemoire();
   if (!base) return false;
   return new Promise(ok => {
@@ -74,6 +75,7 @@ async function ecrireMemoire({ lignes = [], recurrentes = [], etat = {}, envois 
     Object.keys(etat).forEach(cle => E.put(etat[cle], cle));
     envois.forEach(x => F.put(x));
     retirer.forEach(n => F.delete(n));
+    effacer.forEach(id => L.delete(id));
   });
 }
 

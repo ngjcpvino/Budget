@@ -35,6 +35,7 @@ function aller(page, f) {
     moisLignes = '';
   }
   if (page === 'home') modeAccueil = '';
+  if (page === 'gl') triGL = 'n';
   tiersOuvert = '';
   nouvelleEntree(false);
   afficher();

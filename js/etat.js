@@ -32,6 +32,7 @@ let tiersOuvert = '';
 let placementOuvert = '';
 let compteOuvert = '';
 let moisLignes = '';
+let triGL = 'n';           // le GL : n par numéro d'écriture · d par date
 let cmpMode = '';
 let cmpPeriode = 'p';     // p : même période · c : années complètes
 let releve = null;        // le relevé de la banque en cours (releve.js)

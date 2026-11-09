@@ -28,10 +28,24 @@ function pageComptes() {
     + `<div class=texte-discret>Touche un compte pour voir ses lignes.</div><div class="boutons espace-haut"><button onclick="pageCompte()">+ Ajouter un compte</button></div>`;
 }
 
-/* Le GL (Plus → Comptes → GL; J-C, 2026-11-08) : toutes les lignes de l'année, comme Dépenses → Détail → Tout, mais sans les choix du haut */
+/* Le GL (Plus → Comptes → GL; J-C, 2026-11-08) : toutes les écritures de l'année, les rangées de Dépenses → Détail → Tout,
+   par numéro d'écriture ou par date (J-C, 2026-11-09), le plus récent en haut. Une écriture pas encore numérotée (en route vers la feuille) va en haut.
+   Les annulations et les écritures annulées paraissent ici seulement : « Annulation du n° … », « annulée par le n° … » */
+const CHOIX_GL = [['n', 'Par numéro'], ['d', 'Par date']];
 function pageGL() {
-  const lignes = depensesAnnee().sort((x, y) => y.d.localeCompare(x.d));
-  return lignes.map(e => rangee(e, partDe(e, 't'))).join('') || '<div class=vide>Rien à afficher.</div>';
+  const annulation = new Map(), parId = new Map(donnees.ex.map(e => [e.id, e])), numero = e => e.no || Infinity;
+  donnees.ex.forEach(e => { if (estAnnulation(e)) annulation.set(idAnnule(e), e); });
+  const lignes = ecrituresAnnee().sort(triGL === 'n' ? (x, y) => (numero(y) - numero(x)) || 0 : (x, y) => y.d.localeCompare(x.d) || (numero(y) - numero(x)) || 0);
+  const notes = e => {
+    if (estAnnulation(e)) {
+      const n = e.an || (parId.get(idAnnule(e)) || {}).no;
+      return { titre: 'Annulation' + (n ? ' du n° ' + n : '') };
+    }
+    const a = annulation.get(e.id);
+    return a ? { apres: ' · annulée' + (a.no ? ' par le n° ' + a.no : '') } : {};
+  };
+  return `<div class=filtres><select onchange="triGL=this.value;afficher()">${options(CHOIX_GL, triGL)}</select></div>`
+    + (lignes.map(e => rangee(e, partDe(e, 't'), notes(e))).join('') || '<div class=vide>Rien à afficher.</div>');
 }
 
 /* La page d'un compte : ses lignes, comme celles d'un placement. Une carte : ce qui en sort en plus, les paiements reçus en moins,
