@@ -81,6 +81,7 @@ main{padding:14px 16px}
 .carte,.ligne-depense,.tuile,button,select,input,textarea{border:1px solid var(--couleur-ligne)}
 button,select,input,textarea{font:inherit;color:inherit;height:var(--hauteur-champ);padding:0 14px;width:100%;background:var(--couleur-champ);-webkit-appearance:none;appearance:none}
 button{cursor:pointer;background:var(--couleur-fond);width:auto}
+[disabled]{opacity:.5;cursor:default}
 /* La flèche du menu déroulant est une image : sa couleur est la seule codée en dur (%2385705f = texte discret) */
 select{background:var(--couleur-champ) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%2385705f' stroke-width='2'/></svg>") no-repeat right 12px center;padding-right:34px}
 textarea{padding:8px}

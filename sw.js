@@ -8,11 +8,11 @@
    Ne touche jamais à la feuille (les appels POST vers Apps Script).
    ===================================================================== */
 
-const VERSION = '248df98b0df8';
+const VERSION = '10fdf1cc5a4b';
 const EMPREINTES = {
   './': 'dee1825ae3af220f',
   'index.html': 'dee1825ae3af220f',
-  'styles.css': 'e49d6345d3ec166d',
+  'styles.css': 'e550bcdc5a93d1ec',
   'manifest.webmanifest': 'e55f769e98754cb5',
   'icone-trait-152.png': 'c144399751ee225e',
   'icone-trait-167.png': 'a3c8961aee4e56d5',
@@ -28,7 +28,7 @@ const EMPREINTES = {
   'js/pages-placements.js': '863cd0ee6a35f80f',
   'js/pages-comptes.js': '0b8bcd7347be2e9d',
   'js/pages-tiers-plus.js': '7a7e25b9ed850f06',
-  'js/formulaires.js': '353eb73e2fc0bd6f',
+  'js/formulaires.js': '41e2b712a499fb34',
   'js/modifier.js': '5e4571e1f70ab0a0',
   'js/recurrentes.js': '252e6a340af6badf',
   'js/releve.js': 'e5b219ef8252b1d2',

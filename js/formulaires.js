@@ -195,15 +195,15 @@ function placerBande(bande) {
 /* Une ligne « Fermeture » d'une vieille année importée (elle ramène l'année à zéro le 31 décembre) ne se modifie pas */
 function editerEntree(id, pre) {
   if (id && /^imp\d{4}-fermeture/.test(id)) return afficherMessage("Ligne de fermeture de l'année : elle ne se modifie pas.");
-  if (id && ecritureFermee(id)) return afficherMessage(ecritureFermee(id));
+  if (id && !enLecture && ecritureFermee(id)) return consulterEcriture(id);
   const base = id ? donnees.ex.find(x => x.id === id)
     : { type: 'e', d: '', by: donnees.p[0], mode: '', cat: '', amt: '', desc: '', env: vue === 'pl' ? placementOuvert : '' };
   const e = { ...base, ...(pre || {}) };
   if (['t', 'r', 'p'].includes(e.type)) return editerPaiement(id, pre);
-  rouvrir = o => editerEntree(id, o);
+  rouvrir = o => editerEntree(id, e.refaire ? { ...o, refaire: 1 } : o);
   lireEtat = lireFormulaire;
   const titre = (TITRES_FENETRE[e.type === 'f' && /intér/i.test(e.desc || '') ? 'i' : e.type] || TITRES_FENETRE.e)[id ? 1 : 0];
-  ouvrirFenetre(`<h2>${titre}</h2>${id || ligneReleve >= 0 || !['e', 'm'].includes(e.type) ? '' : choixModeles()}${champsFormulaire(e)}${boutonsBas(id, 'enregistrerEntree')}`);
+  ouvrirFenetre(`<h2>${titre}</h2>${id || e.refaire || ligneReleve >= 0 || !['e', 'm'].includes(e.type) ? '' : choixModeles()}${champsFormulaire(e)}${boutonsBas(id, 'enregistrerEntree')}`);
 }
 
 /* ----- Les modèles (des récurrentes « Aléatoire ») : en haut d'une nouvelle dépense; en toucher un remplit le formulaire ----- */
@@ -253,13 +253,37 @@ function annulationDe(x, t) {
   delete a.del;
   return a;
 }
-/* Une annulation, ou une ligne déjà annulée, ne s'ouvre plus (le GL les montre) */
-function ecritureFermee(id) {
+/* Une annulation, ou une ligne déjà annulée, ne se modifie plus (le GL les montre) */
+const ecritureFermee = id => /~a$/.test(id) || donnees.ex.some(x => x.id === id + '~a');
+
+/* Toucher une écriture fermée l'ouvre pour la consulter : son formulaire habituel, grisé, rien ne se change
+   (J-C, 2026-11-12, choix 1). Refaire ouvre une nouvelle entrée déjà remplie avec la ligne d'origine */
+let enLecture = false;
+const nomEcriture = e => ({ e: 'Dépense', m: 'Placement', f: /intér/i.test(e.desc || '') ? 'Intérêts' : 'Remise' })[e.type] || 'Paiement';
+function consulterEcriture(id) {
   const e = donnees.ex.find(x => x.id === id);
-  if (!e) return '';
-  if (estAnnulation(e)) return 'Une annulation ne se modifie pas.';
-  const a = donnees.ex.find(x => x.id === id + '~a');
-  return a ? 'Cette écriture est annulée' + (a.no ? ' par le n° ' + a.no : '') + '.' : '';
+  if (!e) return;
+  const origine = estAnnulation(e) ? donnees.ex.find(x => x.id === idAnnule(e)) || e : e, annulation = donnees.ex.find(x => x.id === origine.id + '~a');
+  enLecture = true;
+  try { editerEntree(id); } finally { enLecture = false; }
+  const f = trouver('#feuille'), titre = f.querySelector('h2');
+  f.querySelectorAll('input,select,button,textarea').forEach(x => { x.disabled = true; });
+  if (trouver('#f_phrase')) trouver('#f_phrase').remove();
+  titre.textContent = estAnnulation(e) ? 'Annulation du n° ' + (origine.no || '') : nomEcriture(e) + (e.no ? ' n° ' + e.no : '');
+  titre.insertAdjacentHTML('afterend', '<p class=texte-discret>' + (estAnnulation(e)
+    ? `Cette écriture annule le n° ${origine.no || ''} : elle ne se modifie plus.`
+    : `Écriture annulée${annulation && annulation.no ? ' par le n° ' + annulation.no : ''} : elle ne se modifie plus.`) + '</p>');
+  const boutons = f.querySelectorAll('.boutons');
+  boutons[boutons.length - 1].outerHTML = `<div class="boutons espace-haut"><button onclick="fermerFenetre()">Fermer</button><button class=bouton-principal onclick="refaire('${origine.id}')">Refaire</button></div>`;
+}
+/* Refaire : une nouvelle entrée, déjà remplie avec la ligne d'origine (la même date), sans lien avec elle; on la corrige, puis Enregistrer */
+function refaire(id) {
+  const o = donnees.ex.find(x => x.id === id);
+  fermerFenetre();
+  if (!o) return;
+  const { id: _, no, an, u, del, rid, nb, ...copie } = o;
+  if (['t', 'r', 'p'].includes(o.type)) editerPaiement(null, etatDePaiement(o));
+  else editerEntree(null, { ...copie, refaire: 1 });
 }
 /* Rien de changé dans le formulaire : rien à écrire */
 const CHAMPS_ECRITURE = ['d', 'type', 'desc', 'cat', 'env', 'amt', 'by', 'mode', 'to', 'nz', 'nzf', 'nz2', 'nzf2', 'nz3', 'nzf3'];
@@ -308,13 +332,9 @@ function supprimerEntree(id) {
 const montantDu = t => auCent(Object.values(soldesAu(anneeCourante).ti[t] || {}).reduce((s, x) => s + Math.max(+x || 0, 0), 0));
 
 function editerPaiement(id, pre) {
-  if (id && ecritureFermee(id)) return afficherMessage(ecritureFermee(id));
+  if (id && !enLecture && ecritureFermee(id)) return consulterEcriture(id);
   const [N, J] = donnees.p, carte = carteDe(N), b = id ? donnees.ex.find(x => x.id === id) : null;
-  const e = {
-    d: '', desc: '', amt: '', du: '', by: N, aq: 'mc', env: '', cat: '',
-    ...(b ? { d: b.d, desc: b.desc, amt: b.amt, by: b.type === 'p' ? PLACEMENT : b.by || proprietaireCompte(b.mode), aq: b.type === 'r' ? b.nzf : b.to === carte ? 'mc' : proprietaireCompte(b.to) || 'mc', env: b.env, cat: b.cat } : {}),
-    ...(pre || {})
-  };
+  const e = { d: '', desc: '', amt: '', du: '', by: N, aq: 'mc', env: '', cat: '', ...(b ? etatDePaiement(b) : {}), ...(pre || {}) };
   e.env = e.env || (vue === 'pl' ? placementOuvert : (donnees.env[0] || {}).n) || '';
   /* Un nouveau paiement d'un tiers : le montant qu'il doit se met tout seul (on peut le changer). Changer de payeur le refait,
      seulement si le montant n'a pas été changé à la main (du = le montant mis tout seul) */
@@ -373,6 +393,11 @@ function majPhrasePaiement() {
   if (p) p.innerHTML = phrasePaiement(lireEtat(), p.dataset.id);
 }
 
+/* Les choix du formulaire Paiement, tirés d'une ligne (modifier, consulter, refaire) */
+function etatDePaiement(b) {
+  const carte = carteDe(donnees.p[0]);
+  return { d: b.d, desc: b.desc, amt: b.amt, by: b.type === 'p' ? PLACEMENT : b.by || proprietaireCompte(b.mode), aq: b.type === 'r' ? b.nzf : b.to === carte ? 'mc' : proprietaireCompte(b.to) || 'mc', env: b.env, cat: b.cat };
+}
 /* La ligne d'un paiement, telle que les choix la donnent (sans vérifier) */
 function lignePaiement(s) {
   const [N] = donnees.p, carte = carteDe(N), parPlacement = s.by === PLACEMENT;
