@@ -343,7 +343,7 @@ function phrasePaiement(qui, aQui, placement, categorie) {
   if (qui === PLACEMENT) return `Le placement ${securiser(placement)} baisse du montant, la ${carte} aussi, et les communes baissent du montant ${categorie ? 'dans la catégorie ' + securiser(categorie) : 'dans la catégorie à choisir'}.`;
   if (aQui === 'mc') return estPersonne(qui) ? `La ${carte} baisse du montant, et la part de ${Q} aussi.` : `La dette de ${Q} baisse du montant, et la ${carte} aussi.`;
   return estPersonne(qui) ? `La part de ${Q} sur la ${carte} baisse du montant, celle de ${A} monte d'autant.`
-    : `La dette de ${Q} envers ${A} baisse du montant; ce qui dépasse cette dette baisse sa dette envers ${securiser(aQui === N ? J : N)}, et ${A} le lui doit alors.`;
+    : `La dette de ${Q} envers ${A} baisse du montant; ce qui dépasse cette dette baisse sa dette envers ${securiser(aQui === N ? J : N)}, et la part de ${securiser(J)} sur la ${carte} ${aQui === N ? 'baisse' : 'monte'} d'autant.`;
 }
 
 function objetPaiement() {
