@@ -42,7 +42,7 @@ const rafraichirFormulaire = () => rouvrir(lireEtat());
 /* Un champ de montant au format d'ici (« 83,40 $ »); auto : le montant y a été mis tout seul (data-auto le garde, pour savoir s'il a été changé à la main) */
 const champMontant = (id, v, classe, auto) => {
   const texte = v === '' || v == null || isNaN(+v) ? '' : argent(v);
-  return `<input id=${id}${classe ? ' class=' + classe : ''} type=text inputmode=decimal autocomplete=off placeholder="0,00 $" value="${texte}"${auto && texte ? ` data-auto="${texte}"` : ''} onblur="formaterMontant(this)" oninput="majPartCommune()">`;
+  return `<input id=${id}${classe ? ' class=' + classe : ''} type=text inputmode=decimal autocomplete=off placeholder="0,00 $" value="${texte}"${auto && texte ? ` data-auto="${texte}"` : ''} onblur="formaterMontant(this)" oninput="majPartCommune();majPhrasePaiement()">`;
 };
 function formaterMontant(champ) {
   const n = lireMontant(champ.value);
@@ -330,32 +330,64 @@ function editerPaiement(id, pre) {
   const choixPlacement = `<div class=deux-colonnes><label>Placement<select id=f_env onchange="rafraichirFormulaire()">${options(donnees.env.map(x => x.n), e.env)}</select></label>`
     + `<label>Catégorie à diminuer<select id=f_cat onchange="rafraichirFormulaire()">${options(donnees.cats, e.cat, e.cat ? '' : 'Choisis une catégorie')}</select></label></div>`;
   ouvrirFenetre(`<h2>${id ? 'Modifier le paiement' : 'Nouveau paiement'}</h2>${champMontant('f_amt', e.amt, 'champ-montant')}<input type=hidden id=f_du value="${e.du}">`
-    + `<div class=deux-colonnes><label>Date<input id=f_d type=date value="${e.d}"></label><label>Description<input id=f_desc value="${securiser(e.desc)}"></label></div>`
+    + `<div class=deux-colonnes><label>Date<input id=f_d type=date value="${e.d}" onchange="majPhrasePaiement()"></label><label>Description<input id=f_desc value="${securiser(e.desc)}"></label></div>`
     + `<label>Qui paie${choixBoutons('f_by', [N, J, ...donnees.tiers, ...(carte ? [[PLACEMENT, 'Un placement']] : [])], e.by, 1)}</label>`
     + (parPlacement ? choixPlacement : `<label>À qui${choixBoutons('f_aq', aQui, aQuiChoisi, 1)}</label>`)
-    + `<p class=texte-discret>${phrasePaiement(e.by, parPlacement ? 'mc' : aQuiChoisi, e.env, e.cat)}</p>${boutonsBas(id, 'enregistrerPaiement')}`);
+    + `<p id=f_phrase class=texte-discret data-id="${securiser(id || '')}">${phrasePaiement({ ...e, aq: parPlacement ? 'mc' : aQuiChoisi }, id)}</p>${boutonsBas(id, 'enregistrerPaiement')}`);
 }
 
-/* La petite phrase sous les choix : ce que le paiement va faire */
-function phrasePaiement(qui, aQui, placement, categorie) {
-  const [N, J] = donnees.p, carte = securiser(nomCompte(carteDe(N))), Q = securiser(qui), A = securiser(aQui);
-  if (!qui) return 'Choisis qui paie.';
-  if (qui === PLACEMENT) return `Le placement ${securiser(placement)} baisse du montant, la ${carte} aussi, et les communes baissent du montant ${categorie ? 'dans la catégorie ' + securiser(categorie) : 'dans la catégorie à choisir'}.`;
-  if (aQui === 'mc') return estPersonne(qui) ? `La ${carte} baisse du montant, et la part de ${Q} aussi.` : `La dette de ${Q} baisse du montant, et la ${carte} aussi.`;
-  return estPersonne(qui) ? `La part de ${Q} sur la ${carte} baisse du montant, celle de ${A} monte d'autant.`
-    : `La dette de ${Q} envers ${A} baisse du montant; ce qui dépasse cette dette baisse sa dette envers ${securiser(aQui === N ? J : N)}, et la part de ${securiser(J)} sur la ${carte} ${aQui === N ? 'baisse' : 'monte'} d'autant.`;
+/* La petite phrase sous les choix : ce que ce paiement change, avec le montant tapé (J-C, 2026-11-12 : l'effet, pas la règle).
+   Sur la MC : la part de chacun, comme sur l'Accueil (la 2e personne = ce qu'elle doit à la 1re; un tiers = ce qu'il doit à la 1re;
+   la 1re = le reste de la carte). À part : le placement qui paie, la dette d'un tiers envers la 2e personne (pas sur la MC),
+   et ce qu'une personne doit à un tiers qui a payé plus que ses dettes. Calculé à la date du paiement (le partage d'un tiers en dépend);
+   sans date : au 31 décembre de l'année choisie, comme l'Accueil et le montant dû d'un tiers */
+function phrasePaiement(s, id) {
+  if (!s.by) return 'Choisis qui paie.';
+  if (!(s.amt > 0)) return 'Entre le montant.';
+  const [N, J] = donnees.p, carte = carteDe(N), d = dateValide(s.d) ? s.d : anneeCourante + '-12-31';
+  const ligne = { ...lignePaiement(s), id: '~', d };
+  const base = lignesVivantes().filter(e => e.d <= d && e.id !== id), av = soldes(base), ap = soldes(base.concat([ligne]));
+  const positif = x => Math.max(+x || 0, 0), signe = x => (x > 0 ? '+' : '−') + argent(Math.abs(x));
+  const dette = (o, t, p) => (o.ti[t] || {})[p];
+  const parts = { [J]: auCent(ap.solde - av.solde) }, autres = [];
+  if (carte) {
+    donnees.tiers.forEach(t => { parts[t] = auCent(positif(dette(ap, t, N)) - positif(dette(av, t, N))); });
+    parts[N] = auCent(montantPourCompte(ligne, carte) - donnees.tiers.reduce((x, t) => x + parts[t], parts[J]));
+  } else if (parts[J]) autres.push(`${securiser(J)} doit ${argent(Math.abs(parts[J]))} de ${parts[J] < 0 ? 'moins' : 'plus'} à ${securiser(N)}.`);
+  donnees.tiers.forEach(t => (carte ? [J] : [N, J]).forEach(p => {
+    const x = auCent(positif(dette(ap, t, p)) - positif(dette(av, t, p)));
+    if (x) autres.push(`${securiser(t)} doit ${argent(Math.abs(x))} de ${x < 0 ? 'moins' : 'plus'} à ${securiser(p)}.`);
+  }));
+  donnees.tiers.forEach(t => [N, J].forEach(p => {
+    if (positif(-dette(ap, t, p)) > positif(-dette(av, t, p)) + 0.004) autres.push(`${securiser(p)} doit ${argent(positif(-dette(ap, t, p)))} à ${securiser(t)}.`);
+  }));
+  const ordre = [...new Set([s.by, s.aq, N, J, ...donnees.tiers])].filter(n => carte && Math.abs(parts[n] || 0) >= 0.005);
+  return [
+    ligne.type === 'p' && ligne.env ? `${securiser(ligne.env)} : ${signe(-ligne.amt)}.` : '',
+    ordre.length ? ordre.map(n => `${securiser(n)} : ${signe(parts[n])}`).join(' · ') + ` sur la ${securiser(nomCompte(carte))}.` : '',
+    ...autres
+  ].filter(Boolean).join(' ') || (carte ? `Rien ne change sur la ${securiser(nomCompte(carte))}.` : 'Rien ne change.');
+}
+function majPhrasePaiement() {
+  const p = trouver('#f_phrase');
+  if (p) p.innerHTML = phrasePaiement(lireEtat(), p.dataset.id);
 }
 
-function objetPaiement() {
-  const [N] = donnees.p, carte = carteDe(N), s = lireEtat(), parPlacement = s.by === PLACEMENT;
-  if (!dateValide(s.d) || !(s.amt > 0)) return afficherMessage('Entre une date et un montant.');
-  if (!s.by) return afficherMessage('Choisis qui paie.');
-  if (parPlacement && !s.env) return afficherMessage('Choisis un placement (à créer dans Plus).');
-  if (parPlacement && !s.cat) return afficherMessage('Choisis une catégorie.');
+/* La ligne d'un paiement, telle que les choix la donnent (sans vérifier) */
+function lignePaiement(s) {
+  const [N] = donnees.p, carte = carteDe(N), parPlacement = s.by === PLACEMENT;
   return {
     d: s.d, desc: s.desc, amt: s.amt, cat: parPlacement ? s.cat : '', env: parPlacement ? s.env : '', mode: '', nz: 0, nzf: '', nz2: 0, nzf2: '', nz3: 0, nzf3: '',
     ...(parPlacement ? { type: 'p', by: N, to: carte } : s.aq === 'mc' ? { type: 't', by: s.by, to: carte } : { type: 'r', by: s.by, nzf: s.aq, to: '' })
   };
+}
+function objetPaiement() {
+  const s = lireEtat(), parPlacement = s.by === PLACEMENT;
+  if (!dateValide(s.d) || !(s.amt > 0)) return afficherMessage('Entre une date et un montant.');
+  if (!s.by) return afficherMessage('Choisis qui paie.');
+  if (parPlacement && !s.env) return afficherMessage('Choisis un placement (à créer dans Plus).');
+  if (parPlacement && !s.cat) return afficherMessage('Choisis une catégorie.');
+  return lignePaiement(s);
 }
 function enregistrerPaiement(id) {
   if (!trouver('#f_amt')) return;
