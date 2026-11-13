@@ -84,7 +84,7 @@ function preparerReleve(texte) {
 /* L'historique d'un commerçant, le plus récent en premier : les dépenses déjà venues de la banque sous ce nom; sinon celles dont la description
    commence un mot du nom de la banque (« Super C » dans « SUPER C BERTHIERVILLE »; la plus longue description gagne).
    H est préparé une fois par fichier : l = les dépenses (la plus récente d'abord), s = leurs descriptions simplifiées, d = ces descriptions sans doublons */
-/* Le nom de la banque, plus lisible (J-C, 2026-11-13) : les mots collés par leurs majuscules se séparent (« LaMaisonSimons » → « La Maison Simons »),
+/* Le nom de la banque, plus lisible (J-C, 2026-11-13) : les mots collés par leurs majuscules se séparent (« MaBoutique » → « Ma Boutique »),
    et « QC » s'en va (aussi un « Q » seul au bout : le QC coupé par la banque). Le nom à la banque, lui, reste tel quel (la mémoire des commerçants) */
 const nomPropre = nb => String(nb || '').replace(/([a-zà-ÿ])([A-ZÀ-Ý])/g, '$1 $2').replace(/(^|\s)QC(?=\s|$)/gi, ' ').replace(/\s+Q\s*$/i, '').replace(/\s+/g, ' ').trim();
 
