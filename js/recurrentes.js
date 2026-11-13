@@ -60,7 +60,23 @@ function pageRecurrentes(id, pre) {
   const frequence = `<label>Fréquence<select id=f_fq onchange="rafraichirFormulaire()">${options(Object.entries({ ...FREQUENCES, x: 'Aléatoire (modèle)' }), e.freq)}</select></label>`;
   ouvrirFenetre(`<h2>${modele ? (e.id ? 'Modifier le modèle' : 'Nouveau modèle') : e.id ? 'Modifier la récurrente' : 'Nouvelle récurrente'}</h2><input type=hidden id=f_id value="${e.id || ''}">${champsFormulaire(e, true)}`
     + (modele ? frequence : `<div class=deux-colonnes>${frequence}<label>Dernière date (facultatif)<input id=f_end type=date value="${e.end || ''}"></label></div>`)
-    + `<div class="boutons espace-haut">${e.id ? `<button class=bouton-danger onclick="supprimerRecurrente('${e.id}')">Supprimer</button>` : ''}<button onclick="pageRecurrentes()">Retour</button><button class=bouton-principal onclick="enregistrerRecurrente()">Enregistrer</button></div>`);
+    + `<div class="boutons espace-haut">${e.id ? `<button class=bouton-danger onclick="supprimerRecurrente('${e.id}')">Supprimer</button>` : ''}<button onclick="pageRecurrentes()">Retour</button><button class=bouton-principal onclick="enregistrerRecurrente()">Enregistrer</button></div>`
+    + (id && !modele ? historiqueRecurrente(id) : ''));
+}
+
+/* L'historique d'une récurrente, sous ses boutons (J-C, 2026-11-13, choix 1) : les lignes qu'elle a ajoutées, telles qu'elles sont aujourd'hui
+   (une modifiée : sa version corrigée; une supprimée : plus là), la plus récente en haut. Toucher une ligne ouvre son formulaire; le fermer ramène ici.
+   Un modèle n'en a pas : une dépense faite avec lui ne lui reste pas liée */
+function historiqueRecurrente(id) {
+  const lignes = lignesVivantes().filter(x => x.rid === id).sort((a, b) => b.d.localeCompare(a.d) || (b.no || 0) - (a.no || 0));
+  return '<h3 class=espace-haut>Historique</h3>' + (lignes.length
+    ? `<div class=texte-discret>${lignes.length} ligne(s) · ${argent(lignes.reduce((s, x) => s + +x.amt, 0))}</div>`
+      + lignes.map(x => rangee(x, +x.amt, { clic: `ouvrirDepuisRecurrente('${x.id}','${id}')` })).join('')
+    : '<div class=vide>Aucune ligne encore.</div>');
+}
+function ouvrirDepuisRecurrente(ligne, recurrente) {
+  apresFenetre = () => pageRecurrentes(recurrente);
+  editerEntree(ligne);
 }
 
 /* Un modèle sans montant : ses parts gardent leur nom, avec ou sans montant (sans montant : la part prendra ce qui reste) */

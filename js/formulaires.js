@@ -13,6 +13,9 @@ function fermerFenetre() {
   trouver('#modale').classList.remove('actif');
   trouver('#feuille').innerHTML = '';
   ligneReleve = -1;
+  const retour = apresFenetre;
+  apresFenetre = null;
+  if (retour) retour();
 }
 
 /* La valeur d'un champ : un groupe de boutons garde son choix dans data-v; lc : '' si le champ n'est pas là */

@@ -20,7 +20,7 @@ const caseDate = d => `<div class=case-date>${d ? `<b>${+d.slice(8)}</b><small>$
 function rangee(ligne, montant, notes = {}) {
   const [N, J] = donnees.p;
   const couleur = ligne.by === N ? 'texte-n' : ligne.by === J ? 'texte-jc' : '';
-  return `<div class=ligne-depense onclick="editerEntree('${ligne.id}')">${caseDate(ligne.d)}<span class=icone>${ICONES_TYPE[ligne.type] || iconeCategorie(ligne.cat)}</span>`
+  return `<div class=ligne-depense onclick="${notes.clic || `editerEntree('${ligne.id}')`}">${caseDate(ligne.d)}<span class=icone>${ICONES_TYPE[ligne.type] || iconeCategorie(ligne.cat)}</span>`
     + `<div><b>${securiser(notes.titre || ligne.desc || ligne.cat || LIBELLES_TYPE[ligne.type] || '')}</b><small>${ligne.no ? 'n° ' + ligne.no + ' · ' : ''}${detailsLigne(ligne)}${notes.apres || ''}</small></div>`
     + `<b class="${couleur}">${argent(montant)}</b></div>`;
 }
