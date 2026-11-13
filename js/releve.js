@@ -84,10 +84,14 @@ function preparerReleve(texte) {
 /* L'historique d'un commerçant, le plus récent en premier : les dépenses déjà venues de la banque sous ce nom; sinon celles dont la description
    commence un mot du nom de la banque (« Super C » dans « SUPER C BERTHIERVILLE »; la plus longue description gagne).
    H est préparé une fois par fichier : l = les dépenses (la plus récente d'abord), s = leurs descriptions simplifiées, d = ces descriptions sans doublons */
+/* Le nom de la banque, plus lisible (J-C, 2026-11-13) : les mots collés par leurs majuscules se séparent (« LaMaisonSimons » → « La Maison Simons »),
+   et « QC » s'en va (aussi un « Q » seul au bout : le QC coupé par la banque). Le nom à la banque, lui, reste tel quel (la mémoire des commerçants) */
+const nomPropre = nb => String(nb || '').replace(/([a-zà-ÿ])([A-ZÀ-Ý])/g, '$1 $2').replace(/(^|\s)QC(?=\s|$)/gi, ' ').replace(/\s+Q\s*$/i, '').replace(/\s+/g, ' ').trim();
+
 function historique(nb, H) {
   const memeNom = H.l.filter(e => e.nb === nb);
   if (memeNom.length) return memeNom;
-  const s = ' ' + simplifier(nb), d = H.d.filter(d => new RegExp(' ' + d + '(?![a-z])').test(s)).sort((p, q) => q.length - p.length)[0];
+  const s = ' ' + simplifier(nomPropre(nb)), d = H.d.filter(d => new RegExp(' ' + d + '(?![a-z])').test(s)).sort((p, q) => q.length - p.length)[0];
   return d ? H.l.filter((e, i) => H.s[i] === d) : [];
 }
 
@@ -112,7 +116,7 @@ function proposerLigne(x, carte, H) {
   if (x.v > 0 && simplifier(x.nb).includes('paiement')) return Object.assign(x, { paie: 1, etat: 'qui', o: { ...o, type: 't', amt: x.v, by: '', to: carte } });
   Object.assign(o, { type: 'e', amt: -x.v, by: N, mode: carte });
   const avant = historique(x.nb, H);
-  if (!avant.length) return Object.assign(x, { etat: 'nouveau', o: { ...o, desc: x.nb } });
+  if (!avant.length) return Object.assign(x, { etat: 'nouveau', o: { ...o, desc: nomPropre(x.nb) } });
   const J = compter(avant.map(pourQui)), [q, n] = J[0], clair = q !== '*' && n * 3 >= avant.length * 2;
   const cat = compter(avant.map(e => e.cat)).map(c => c[0]).find(c => donnees.cats.includes(c)) || '';
   return Object.assign(x, { etat: clair ? 'pret' : 'verifier', nv: clair ? '' : noteVerifier(J), o: { ...o, desc: avant[0].desc, cat, ...(clair && q ? { nz: o.amt, nzf: q } : {}) } });
