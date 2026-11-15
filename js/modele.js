@@ -71,7 +71,8 @@ function effetsDe(ligne) {
       else if (qui === J && aQui === N) effets.dettes.push({ doit: J, a: N, montant: -T });
     } else if (qui && estPersonne(aQui)) effets.paiementTiers = { tiers: qui, recoit: aQui, montant: T };
   } else if (effets.budget) {
-    const paye = type === 'p' ? proprietaireCompte(ligne.to) || N : ligne.by;
+    /* Un placement utilisé sur la MC : celui qui paie = le propriétaire de la carte; « Autre » (sans compte) : personne, aucune dette */
+    const paye = type === 'p' ? (ligne.to ? proprietaireCompte(ligne.to) || N : '') : ligne.by;
     if (estPersonne(paye)) {
       const signe = paye === N ? 1 : -1;
       const parts = effets.budget.parts, montant = type === 'p' ? -T : T;

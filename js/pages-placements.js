@@ -26,7 +26,7 @@ const reportAvant = (depart, lignes, montantDe) => depart + lignes.filter(e => e
 
 const finAnnee = y => y < new Date().getFullYear() ? ' au 31 décembre ' + y : '';
 
-/* La page d'un placement (toucher sa tuile sur l'Accueil) : placés, intérêts et remises en plus, payé sur la carte en moins */
+/* La page d'un placement (toucher sa tuile sur l'Accueil) : placés, intérêts et remises en plus, utilisé en moins */
 function voirPlacement(nom) {
   placementOuvert = nom;
   aller('pl');
@@ -50,9 +50,9 @@ function pageEnveloppes() {
   if (!liste.length) return `<div class=carte><div class=vide>Aucun placement.<br>Crée-en un dans Plus.</div></div>`;
   return liste.map((x, i) => `<div class=carte><h3>${iconeEnveloppe(x)} ${securiser(x.nom)}</h3>`
     + `<div class=gros-chiffre><small>${y < new Date().getFullYear() ? 'Solde au 31 décembre ' + y : 'Solde'}</small><b class="${x.solde < 0 ? 'negatif' : ''}">${argent(x.solde)}</b></div>`
-    + `<p>Placé en ${y} <b>${argent(x.an.m)}</b></p><p>Intérêts et remises <b>${argent(x.an.f)}</b></p><p>Payé sur la MC <b>${argent(x.an.p)}</b></p>`
+    + `<p>Placé en ${y} <b>${argent(x.an.m)}</b></p><p>Intérêts et remises <b>${argent(x.an.f)}</b></p><p>Utilisé en ${y} <b>${argent(x.an.p)}</b></p>`
     + `<div class="boutons espace-haut"><button class=bouton-principal onclick="editerEntree(null,{type:'m',env:donnees.env[${i}].n})">Placement</button>`
     + `<button onclick="editerEntree(null,{type:'f',desc:'Intérêts',env:donnees.env[${i}].n})">Intérêts</button>`
     + `<button onclick="editerEntree(null,{type:'f',desc:'Remise',env:donnees.env[${i}].n})">Remise</button>`
-    + `<button onclick="editerPaiement(null,{by:PLACEMENT,env:donnees.env[${i}].n})">Payer la MC</button></div></div>`).join('');
+    + `<button onclick="editerPaiement(null,{by:PLACEMENT,env:donnees.env[${i}].n,utiliser:1})">Utiliser</button></div></div>`).join('');
 }

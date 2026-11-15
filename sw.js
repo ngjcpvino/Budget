@@ -8,7 +8,7 @@
    Ne touche jamais à la feuille (les appels POST vers Apps Script).
    ===================================================================== */
 
-const VERSION = '812d12d49077';
+const VERSION = '5470869bb478';
 const EMPREINTES = {
   './': 'dee1825ae3af220f',
   'index.html': 'dee1825ae3af220f',
@@ -20,15 +20,15 @@ const EMPREINTES = {
   'icone-trait-512.png': 'ff41c3d9dcf7309e',
   'js/socle.js': '1a0cb558fb3c8168',
   'js/etat.js': 'c8ef18c897f7b319',
-  'js/modele.js': 'b450be7824505285',
+  'js/modele.js': '6b6ebd6f814079cc',
   'js/memoire.js': 'a8dbde51882722b9',
   'js/serveur.js': '9cc1dd765242c877',
   'js/pages-accueil.js': 'cb3c34ea697a3541',
-  'js/pages-depenses.js': 'c806181ae753fb01',
-  'js/pages-placements.js': '863cd0ee6a35f80f',
+  'js/pages-depenses.js': '62472ae0fad9417e',
+  'js/pages-placements.js': '795b89223fbf83c1',
   'js/pages-comptes.js': '0b8bcd7347be2e9d',
   'js/pages-tiers-plus.js': '7a7e25b9ed850f06',
-  'js/formulaires.js': '1154637735cad3bd',
+  'js/formulaires.js': '402ad67b8de37353',
   'js/modifier.js': '5e4571e1f70ab0a0',
   'js/recurrentes.js': '19c9ab0a6ba694a6',
   'js/releve.js': '7911b83d79226c6e',

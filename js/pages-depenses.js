@@ -28,7 +28,7 @@ function rangee(ligne, montant, notes = {}) {
 /* La petite ligne grise : qui paie et avec quoi (une dépense), qui paie qui (un paiement), ou le placement */
 function detailsLigne(e) {
   if (e.type === 'f') return 'Placement ' + securiser(e.env);
-  if (e.type === 'p') return 'Placement ' + securiser(e.env) + ' → ' + securiser(nomCompte(e.to));
+  if (e.type === 'p') return 'Placement ' + securiser(e.env) + ' → ' + (e.to ? securiser(nomCompte(e.to)) : 'Autre');
   if (e.type === 't' || e.type === 'r') return securiser(e.by || proprietaireCompte(e.mode)) + ' → ' + securiser(e.type === 'r' ? e.nzf : nomCompte(e.to));
   const parts = partsDe(e);
   const texteParts = parts.length ? ' · payé ' + argent(e.amt) + parts.map(([qui, z]) => ' · ' + (estPersonne(qui) ? 'perso ' + argent(z) + ' (' + securiser(qui) + ')' : argent(z) + ' pour ' + securiser(qui))).join('') : '';

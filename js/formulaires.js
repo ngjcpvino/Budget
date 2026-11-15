@@ -329,15 +329,21 @@ function supprimerEntree(id) {
   }, () => editerEntree(id));
 }
 
-/* ----- Paiement : qui paie (une personne, un tiers, un placement), puis à qui (la carte, une personne; un placement paie seulement la carte,
-   en choisissant la catégorie à diminuer). Dans la feuille : sur la carte = Transfert; à une personne = Remboursement; par un placement = Payé par l'enveloppe ----- */
+/* ----- Paiement : qui paie (une personne, un tiers, un placement), puis à qui (la carte, une personne).
+   Un placement (J-C, 2026-11-15) : la catégorie à diminuer (celle de ses mises de côté, qu'on peut changer) et le compte : la MC (les deux parts
+   de la MC baissent de la moitié) ou « Autre » (le placement et la catégorie baissent, point). « Utiliser » (la page Placements) : le même
+   formulaire, sans « Qui paie » ni le choix du placement. Dans la feuille : sur la carte = Transfert; à une personne = Remboursement;
+   par un placement = Payé par l'enveloppe ----- */
 /* Ce qu'un tiers doit en tout (à l'un et à l'autre), au 31 décembre de l'année choisie, comme la page Tiers */
 const montantDu = t => auCent(Object.values(soldesAu(anneeCourante).ti[t] || {}).reduce((s, x) => s + Math.max(+x || 0, 0), 0));
+
+/* La catégorie d'un placement : celle de sa mise de côté la plus récente */
+const categoriePlacement = env => (lignesVivantes().filter(e => e.type === 'm' && e.env === env && e.cat).sort((p, q) => q.d.localeCompare(p.d))[0] || {}).cat || '';
 
 function editerPaiement(id, pre) {
   if (id && !enLecture && ecritureFermee(id)) return consulterEcriture(id);
   const [N, J] = donnees.p, carte = carteDe(N), b = id ? donnees.ex.find(x => x.id === id) : null;
-  const e = { d: '', desc: '', amt: '', du: '', by: N, aq: 'mc', env: '', cat: '', ...(b ? etatDePaiement(b) : {}), ...(pre || {}) };
+  const e = { d: '', desc: '', amt: '', du: '', by: N, aq: 'mc', env: '', cat: '', catAuto: '', ...(b ? etatDePaiement(b) : {}), ...(pre || {}) };
   e.env = e.env || (vue === 'pl' ? placementOuvert : (donnees.env[0] || {}).n) || '';
   /* Un nouveau paiement d'un tiers : le montant qu'il doit se met tout seul (on peut le changer). Changer de payeur le refait,
      seulement si le montant n'a pas été changé à la main (du = le montant mis tout seul) */
@@ -345,23 +351,34 @@ function editerPaiement(id, pre) {
     const tiers = e.by && e.by !== PLACEMENT && !estPersonne(e.by), du = tiers ? montantDu(e.by) : 0;
     e.amt = e.du = du > 0 ? du : '';
   }
-  rouvrir = o => editerPaiement(id, o);
-  lireEtat = () => ({ d: lc('f_d'), desc: lc('f_desc'), amt: lireMontant(lc('f_amt')), du: lireMontant(lc('f_du')), by: lc('f_by'), aq: lc('f_aq') || 'mc', env: lc('f_env'), cat: lc('f_cat') });
   const parPlacement = e.by === PLACEMENT;
+  /* La catégorie d'un placement se met toute seule (on peut la changer); changer de placement la refait, si elle n'a pas été changée à la main */
+  if (parPlacement && (!e.cat || e.cat === e.catAuto)) e.cat = e.catAuto = categoriePlacement(e.env);
+  rouvrir = o => editerPaiement(id, o);
+  lireEtat = () => ({ d: lc('f_d'), desc: lc('f_desc'), amt: lireMontant(lc('f_amt')), du: lireMontant(lc('f_du')), by: lc('f_by') || e.by, aq: lc('f_aq') || 'mc',
+    env: lc('f_env') || e.env, cat: lc('f_cat'), catAuto: lc('f_catauto'), utiliser: e.utiliser });
   const aQui = [...(carte ? [['mc', nomCompte(carte)]] : []), N, J].filter(x => x !== e.by);
   const aQuiChoisi = aQui.some(x => (Array.isArray(x) ? x[0] : x) === e.aq) ? e.aq : Array.isArray(aQui[0]) ? aQui[0][0] : aQui[0];
-  const choixPlacement = `<div class=deux-colonnes><label>Placement<select id=f_env onchange="rafraichirFormulaire()">${options(donnees.env.map(x => x.n), e.env)}</select></label>`
-    + `<label>Catégorie à diminuer<select id=f_cat onchange="rafraichirFormulaire()">${options(donnees.cats, e.cat, e.cat ? '' : 'Choisis une catégorie')}</select></label></div>`;
-  ouvrirFenetre(`<h2>${id ? 'Modifier le paiement' : 'Nouveau paiement'}</h2>${champMontant('f_amt', e.amt, 'champ-montant')}<input type=hidden id=f_du value="${e.du}">`
-    + `<div class=deux-colonnes><label>Date<input id=f_d type=date value="${e.d}" onchange="majPhrasePaiement()"></label><label>Description<input id=f_desc value="${securiser(e.desc)}"></label></div>`
-    + `<label>Qui paie${choixBoutons('f_by', [N, J, ...donnees.tiers, ...(carte ? [[PLACEMENT, 'Un placement']] : [])], e.by, 1)}</label>`
-    + (parPlacement ? choixPlacement : `<label>À qui${choixBoutons('f_aq', aQui, aQuiChoisi, 1)}</label>`)
-    + `<p id=f_phrase class=texte-discret data-id="${securiser(id || '')}">${phrasePaiement({ ...e, aq: parPlacement ? 'mc' : aQuiChoisi }, id)}</p>${boutonsBas(id, 'enregistrerPaiement')}`);
+  const titre = e.utiliser ? 'Utiliser ' + securiser(e.env) : id ? 'Modifier le paiement' : 'Nouveau paiement';
+  const date = `<label>Date<input id=f_d type=date value="${e.d}" onchange="majPhrasePaiement()"></label>`;
+  /* Un placement : la description se fait toute seule (le nom du placement), sauf une description déjà là (une ligne du relevé) */
+  const descPlacement = donnees.env.some(x => x.n === e.desc) ? '' : e.desc;
+  const deuxiemeRangee = parPlacement
+    ? `<div class=deux-colonnes>${date}<label>Catégorie à diminuer<select id=f_cat>${options(donnees.cats, e.cat, e.cat ? '' : 'Choisis une catégorie')}</select></label></div>`
+      + `<input type=hidden id=f_desc value="${securiser(descPlacement)}"><input type=hidden id=f_catauto value="${securiser(e.catAuto)}">`
+    : `<div class=deux-colonnes>${date}<label>Description<input id=f_desc value="${securiser(e.desc)}"></label></div>`;
+  const quiPaie = e.utiliser ? '' : `<label>Qui paie${choixBoutons('f_by', [N, J, ...donnees.tiers, ...(carte ? [[PLACEMENT, 'Un placement']] : [])], e.by, 1)}</label>`;
+  const placement = (e.utiliser ? '' : `<label>Placement<select id=f_env onchange="rafraichirFormulaire()">${options(donnees.env.map(x => x.n), e.env)}</select></label>`)
+    + (ligneReleve >= 0 || !carte ? '' : `<label>Sur quel compte${choixBoutons('f_aq', [['mc', nomCompte(carte)], ['autre', 'Autre']], e.aq === 'autre' ? 'autre' : 'mc')}</label>`);
+  ouvrirFenetre(`<h2>${titre}</h2>${champMontant('f_amt', e.amt, 'champ-montant')}<input type=hidden id=f_du value="${e.du}">${deuxiemeRangee}${quiPaie}`
+    + (parPlacement ? placement : `<label>À qui${choixBoutons('f_aq', aQui, aQuiChoisi, 1)}</label>`
+      + `<p id=f_phrase class=texte-discret data-id="${securiser(id || '')}">${phrasePaiement({ ...e, aq: aQuiChoisi }, id)}</p>`)
+    + boutonsBas(id, 'enregistrerPaiement'));
 }
 
 /* La petite phrase sous les choix : ce que ce paiement change, avec le montant tapé (J-C, 2026-11-12 : l'effet, pas la règle).
    Sur la MC : la part de chacun, comme sur l'Accueil (la 2e personne = ce qu'elle doit à la 1re; un tiers = ce qu'il doit à la 1re;
-   la 1re = le reste de la carte). À part : le placement qui paie, la dette d'un tiers envers la 2e personne (pas sur la MC),
+   la 1re = le reste de la carte). À part : la dette d'un tiers envers la 2e personne (pas sur la MC),
    et ce qu'une personne doit à un tiers qui a payé plus que ses dettes. Calculé à la date du paiement (le partage d'un tiers en dépend);
    sans date : au 31 décembre de l'année choisie, comme l'Accueil et le montant dû d'un tiers */
 function phrasePaiement(s, id) {
@@ -386,7 +403,6 @@ function phrasePaiement(s, id) {
   }));
   const ordre = [...new Set([s.by, s.aq, N, J, ...donnees.tiers])].filter(n => carte && Math.abs(parts[n] || 0) >= 0.005);
   return [
-    ligne.type === 'p' && ligne.env ? `${securiser(ligne.env)} : ${signe(-ligne.amt)}.` : '',
     ordre.length ? ordre.map(n => `${securiser(n)} : ${signe(parts[n])}`).join(' · ') + ` sur la ${securiser(nomCompte(carte))}.` : '',
     ...autres
   ].filter(Boolean).join(' ') || (carte ? `Rien ne change sur la ${securiser(nomCompte(carte))}.` : 'Rien ne change.');
@@ -399,14 +415,16 @@ function majPhrasePaiement() {
 /* Les choix du formulaire Paiement, tirés d'une ligne (modifier, consulter, refaire) */
 function etatDePaiement(b) {
   const carte = carteDe(donnees.p[0]);
-  return { d: b.d, desc: b.desc, amt: b.amt, by: b.type === 'p' ? PLACEMENT : b.by || proprietaireCompte(b.mode), aq: b.type === 'r' ? b.nzf : b.to === carte ? 'mc' : proprietaireCompte(b.to) || 'mc', env: b.env, cat: b.cat };
+  const aq = b.type === 'p' ? (b.to ? 'mc' : 'autre') : b.type === 'r' ? b.nzf : b.to === carte ? 'mc' : proprietaireCompte(b.to) || 'mc';
+  return { d: b.d, desc: b.desc, amt: b.amt, by: b.type === 'p' ? PLACEMENT : b.by || proprietaireCompte(b.mode), aq, env: b.env, cat: b.cat };
 }
 /* La ligne d'un paiement, telle que les choix la donnent (sans vérifier) */
 function lignePaiement(s) {
   const [N] = donnees.p, carte = carteDe(N), parPlacement = s.by === PLACEMENT;
   return {
-    d: s.d, desc: s.desc, amt: s.amt, cat: parPlacement ? s.cat : '', env: parPlacement ? s.env : '', mode: '', nz: 0, nzf: '', nz2: 0, nzf2: '', nz3: 0, nzf3: '',
-    ...(parPlacement ? { type: 'p', by: N, to: carte } : s.aq === 'mc' ? { type: 't', by: s.by, to: carte } : { type: 'r', by: s.by, nzf: s.aq, to: '' })
+    d: s.d, desc: parPlacement ? s.desc || s.env : s.desc, amt: s.amt, cat: parPlacement ? s.cat : '', env: parPlacement ? s.env : '', mode: '', nz: 0, nzf: '', nz2: 0, nzf2: '', nz3: 0, nzf3: '',
+    ...(parPlacement ? (s.aq === 'autre' ? { type: 'p', by: '', to: '' } : { type: 'p', by: N, to: carte })
+      : s.aq === 'mc' ? { type: 't', by: s.by, to: carte } : { type: 'r', by: s.by, nzf: s.aq, to: '' })
   };
 }
 function objetPaiement() {
