@@ -125,7 +125,8 @@ function blocCommunes(N, J, y, communes, perso, choix) {
 }
 
 /* La carte de crédit de la 1re personne (la MC) se partage : la 2e personne y paie ce qu'elle doit, chaque tiers ce qu'il doit encore à la 1re,
-   la 1re le reste. Sans carte : l'ancien « qui doit à qui » */
+   la 1re le reste. Une carte par nom (le nom et le montant), puis le solde de la carte et, s'il y a des tiers, la 2e personne et les tiers
+   ensemble (le « Solde JC » de l'Excel). Sans carte : l'ancien « qui doit à qui » */
 function blocCarte(N, J, dettes, doit, aZero) {
   const carte = carteDe(N);
   if (!carte) {
@@ -134,10 +135,11 @@ function blocCarte(N, J, dettes, doit, aZero) {
   }
   const nom = securiser(nomCompte(carte)), soldeCarte = (calculerComptes().find(x => x.cle === carte) || {}).valeur || 0;
   const tiers = Object.entries(dettes.ti).filter(x => x[1][N] > 0.004), partTiers = tiers.reduce((s, x) => s + x[1][N], 0);
-  return `<div class=cartes><div class="carte grande solde personne-2"><small>${securiser(J)} doit payer sur la ${nom}</small><b>${argent(doit)}</b></div>`
-    + `<div class="carte grande solde personne-1"><small>${securiser(N)}, sur la ${nom}</small><b>${argent(soldeCarte - doit - partTiers)}</b></div>`
-    + tiers.map(x => `<div class="carte grande tiers-mc"><small>${securiser(x[0])}, sur la ${nom}</small><b>${argent(x[1][N])}</b></div>`).join('')
-    + `</div><p class=texte-discret>Solde de la ${nom} : ${argent(soldeCarte)}</p>`;
+  return `<div class=cartes><div class="carte grande solde personne-2"><small>${securiser(J)}</small><b>${argent(doit)}</b></div>`
+    + `<div class="carte grande solde personne-1"><small>${securiser(N)}</small><b>${argent(soldeCarte - doit - partTiers)}</b></div>`
+    + tiers.map(x => `<div class="carte grande tiers-mc"><small>${securiser(x[0])}</small><b>${argent(x[1][N])}</b></div>`).join('')
+    + `</div><p class=texte-discret>Solde de la ${nom} : ${argent(soldeCarte)}`
+    + (tiers.length ? `<br>${securiser(J)} et les tiers : ${argent(doit + partTiers)}` : '') + '</p>';
 }
 
 /* Nos placements : une tuile par placement (toucher = sa page) */
