@@ -85,7 +85,7 @@ function pageCompte(i, source, pre) {
     + `<div class="boutons espace-haut">${i == null ? '' : `<button class=bouton-danger onclick="supprimerCompte(${i})">Supprimer</button>`}<button onclick="retourCompte()">Annuler</button><button class=bouton-principal onclick="enregistrerCompte(${i == null ? 'null' : i})">Enregistrer</button></div>`);
 }
 function enregistrerCompte(i) {
-  if (!trouver('#f_nm')) return;
+  if (!trouver('#f_nm') || !montantsClairs()) return;
   const nom = trouver('#f_nm').value.trim(), genre = lireChamp('f_k'), proprietaire = lireChamp('f_o');
   const solde = genre === 'p' && trouver('#f_solde') ? +lireMontant(trouver('#f_solde').value) || 0 : 0, compte = { n: nom, o: proprietaire, k: genre, s: solde };
   if (!nom) return afficherMessage('Entre un nom.');

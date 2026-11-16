@@ -15,10 +15,15 @@ const js = texte => securiser(texte).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
 /* 1234.5 → « 1 234,50 $ » */
 const argent = n => (Math.round(+n * 100) / 100 || 0).toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $';
 
-/* Un montant tapé (« 1 234,56 $ », « 12.5 »…) devient un nombre; vide ou illisible : '' */
+/* Un montant tapé (« 1 234,56 $ », « 12.5 », « -8 »…) devient un nombre; vide ou illisible : ''.
+   Rien n'est deviné (J-C, 2026-11-16) : des chiffres, au plus une virgule ou un point, au plus 2 décimales; les espaces et le $ ne comptent pas.
+   « 12..50 », « 1.234,56 », « 1,234 » sont illisibles (avant, ils devenaient 12 $, 1,23 $, 1,23 $ en silence) */
+const MONTANT_CLAIR = /^[-−]?(\d+([.,]\d{0,2})?|[.,]\d{1,2})$/;
+const sansEspaces = texte => String(texte ?? '').replace(/[\s$]/g, '');
+const montantIllisible = texte => sansEspaces(texte) !== '' && !MONTANT_CLAIR.test(sansEspaces(texte));
 const lireMontant = texte => {
-  const n = parseFloat(String(texte ?? '').replace(/[\s$]/g, '').replace(',', '.'));
-  return isNaN(n) ? '' : n;
+  const s = sansEspaces(texte);
+  return MONTANT_CLAIR.test(s) ? parseFloat(s.replace('−', '-').replace(',', '.')) : '';
 };
 
 /* Arrondi au cent (les montants additionnés gardent des poussières de virgule) */

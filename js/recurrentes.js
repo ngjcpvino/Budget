@@ -90,7 +90,7 @@ function partsSansMontant(o) {
 }
 
 function enregistrerRecurrente() {
-  if (!trouver('#f_id')) return;
+  if (!trouver('#f_id') || !montantsClairs()) return;
   const o = lireRecurrente(), modele = o.freq === 'x';
   if (modele) {
     if (!o.desc.trim()) return afficherMessage('Donne un nom au modèle (la description).');

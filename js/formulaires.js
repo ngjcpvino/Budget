@@ -47,7 +47,15 @@ const champMontant = (id, v, classe, auto) => {
   const texte = v === '' || v == null || isNaN(+v) ? '' : argent(v);
   return `<input id=${id}${classe ? ' class=' + classe : ''} type=text inputmode=decimal autocomplete=off placeholder="0,00 $" value="${texte}"${auto && texte ? ` data-auto="${texte}"` : ''} onblur="formaterMontant(this)" oninput="majPartCommune();majPhrasePaiement()">`;
 };
+/* Un montant pas clair : il reste dans sa case, un message le dit, et rien ne s'enregistre (montantsClairs) */
+const messageMontant = champ => afficherMessage('Je ne comprends pas ce montant : ' + champ.value.trim());
+function montantsClairs() {
+  const champ = [...document.querySelectorAll('#feuille input[inputmode=decimal]')].find(c => montantIllisible(c.value));
+  if (champ) messageMontant(champ);
+  return !champ;
+}
 function formaterMontant(champ) {
+  if (montantIllisible(champ.value)) return messageMontant(champ);
   const n = lireMontant(champ.value);
   champ.value = n === '' ? '' : argent(n);
   if (champ.id === 'f_amt' && n !== '') completerParts(n);
@@ -235,6 +243,7 @@ const boutonsBas = (id, enregistrer) => '<div class="boutons espace-haut">' + (l
 
 /* Le formulaire devient une ligne; s'il manque quelque chose : un message, et rien */
 function objetEntree() {
+  if (!montantsClairs()) return;
   const o = lireFormulaire();
   if (!dateValide(o.d) || (o.type === 'e' ? !o.amt : !(o.amt > 0))) return afficherMessage('Entre une date et un montant.');
   if (o.type !== 'e' && !o.env) return afficherMessage('Choisis un placement (à créer dans Plus).');
@@ -428,6 +437,7 @@ function lignePaiement(s) {
   };
 }
 function objetPaiement() {
+  if (!montantsClairs()) return;
   const s = lireEtat(), parPlacement = s.by === PLACEMENT;
   if (!dateValide(s.d) || !(s.amt > 0)) return afficherMessage('Entre une date et un montant.');
   if (!s.by) return afficherMessage('Choisis qui paie.');

@@ -92,6 +92,7 @@ function pageEnveloppe(i) {
     + `<div class="boutons espace-haut">${i == null ? '' : `<button class=bouton-danger onclick="supprimerEnveloppe(${i})">Supprimer</button>`}<button onclick="listeModifiable('env')">Annuler</button><button class=bouton-principal onclick="enregistrerEnveloppe(${i == null ? 'null' : i})">Enregistrer</button></div>`);
 }
 function enregistrerEnveloppe(i) {
+  if (!montantsClairs()) return;
   const nom = trouver('#f_nm').value.trim(), solde = +lireMontant(trouver('#f_solde').value) || 0, icone = trouver('#f_ic').dataset.v;
   if (!nom) return afficherMessage('Entre un nom.');
   if (donnees.env.some((x, j) => x.n === nom && j !== i)) return afficherMessage('Ce nom existe déjà.');
